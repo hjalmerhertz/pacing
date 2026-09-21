@@ -48,6 +48,11 @@ export type FullReport = {
   rank: YourRank;
   /** Players two tiers up, if that reference set has been built. */
   benchmark: BenchmarkReport | null;
+  /**
+   * True when running on a hosted server rather than someone's own
+   * machine. Jobs that would exceed a serverless timeout are hidden.
+   */
+  hosted: boolean;
   /** Per-game values for every metric a focus goal can track. */
   trackable: TrackedSeries;
   /** A readable story of each game, keyed by match id. */

@@ -115,6 +115,14 @@ notices the file changed and reloads it by itself.
 `.env.local` is in `.gitignore`, so your key never gets committed. The key
 goes in that file only, never in the Riot ID box on the page.
 
+## Hosting it
+
+Pacing runs locally with no setup beyond a Riot key. To put it online -
+which a Riot **Production** key application requires, since the reviewer
+has to be able to use it - see [DEPLOY.md](DEPLOY.md). It covers the
+Supabase database, the Vercel deployment, and what behaves differently
+when hosted.
+
 ## Running it
 
 ```powershell

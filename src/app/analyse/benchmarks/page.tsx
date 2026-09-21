@@ -280,6 +280,12 @@ export default function BenchmarksPage() {
                   limit. It is cached for a fortnight afterwards.
                 </p>
               </div>
+            ) : report.hosted ? (
+              <p className="text-sm text-ink-soft">
+                The reference set for your rank has not been built yet. It is
+                compiled offline and shared, because the job takes several
+                minutes - longer than a hosted request may run for.
+              </p>
             ) : (
               <button
                 type="button"

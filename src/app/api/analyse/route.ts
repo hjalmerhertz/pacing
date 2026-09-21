@@ -9,6 +9,7 @@ import { buildBuildReport } from "@/lib/builds";
 import { buildStruggles } from "@/lib/coach";
 import { buildJungleReport } from "@/lib/jungle";
 import { buildScores } from "@/lib/scores";
+import { usingDatabase } from "@/lib/store";
 import { buildMapReport } from "@/lib/mapdata";
 import { buildBestWorst } from "@/lib/bestworst";
 import { buildNarrative } from "@/lib/narrative";
@@ -41,6 +42,10 @@ import type { FullReport, StreamMessage } from "@/lib/reportTypes";
 
 // This route talks to a live API and must never be pre-rendered.
 export const dynamic = "force-dynamic";
+
+// A cold 20-game analysis is roughly 42 requests, which finishes well
+// inside this. Hosts that cap function duration read this value.
+export const maxDuration = 60;
 
 /** How many matches to work on at once. The rate limiter does the real pacing. */
 const CONCURRENCY = 4;
@@ -271,6 +276,7 @@ export async function GET(request: Request) {
           bestWorst,
           rank,
           benchmark,
+          hosted: usingDatabase,
           trackable,
           narratives,
         };

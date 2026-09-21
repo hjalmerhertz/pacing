@@ -1,6 +1,7 @@
 import { buildBenchmark, getYourRank, targetTier } from "@/lib/benchmark";
 import { getAccount, RiotError } from "@/lib/riot";
 import { isPlatform, type Platform } from "@/lib/regions";
+import { usingDatabase } from "@/lib/store";
 
 /**
  * Builds the "what does better look like" reference set.
@@ -27,6 +28,19 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode(`${JSON.stringify(message)}\n`));
 
       try {
+        // Building a reference set is roughly 130 requests over several
+        // minutes - longer than any serverless function is allowed to run.
+        // It is built offline instead and shared through the database.
+        if (usingDatabase) {
+          send({
+            type: "error",
+            title: "Reference sets are built offline",
+            detail:
+              "This job takes a few minutes, which is longer than a hosted request may run for. The reference set is rebuilt periodically and shared with everyone who uses Pacing.",
+          });
+          return;
+        }
+
         if (!isPlatform(platformInput)) {
           send({ type: "error", title: "Unknown server", detail: "Pick a server from the list." });
           return;
