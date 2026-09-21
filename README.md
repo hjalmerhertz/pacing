@@ -40,6 +40,25 @@ see in the client, for example `Hide on bush#KR1`.
 Without a key you can still click **See an example report** on the front page.
 It uses made-up games and never touches the network, so it works straight away.
 
+## When something goes wrong
+
+**`npm run dev` fails with "port 3000 is already in use".**
+A copy of the app is already running - often one left over from an earlier
+session or from a Claude Code session. Either use the one that is already
+running (just open <http://localhost:3000>), or free the port:
+
+```bash
+npx kill-port 3000
+```
+
+**The app says Riot refused the API key.**
+The key in `.env.local` has expired - they only last 24 hours. Copy a fresh one
+from <https://developer.riotgames.com> into `.env.local`. You do not need to
+restart: Next.js notices the file changed and reloads it by itself.
+
+**The key goes in `.env.local`, never in the Riot ID box.**
+The box on the page is for your in-game name and tag, like `louder than you#lty`.
+
 ## How it is put together
 
 | Folder / file | What it does |
