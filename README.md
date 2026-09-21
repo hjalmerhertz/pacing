@@ -30,7 +30,38 @@ follow two rules:
 - **Phase-by-phase gold swing, farming rate and deaths**, so a laning problem
   and a mid-game problem do not get averaged into each other.
 
-## Getting a Riot API key
+## Getting a permanent Riot API key
+
+The 24-hour development key works, but re-pasting it every session is the
+thing most likely to make you stop using this. Riot issues **Personal API
+Keys** that do not expire. It is a form, not code.
+
+1. Go to <https://developer.riotgames.com> and sign in.
+2. Open **Register Product** (top right, under your name) and choose
+   **Personal API Key**.
+3. Fill in the form. What matters:
+   - **Product name**: something plain, e.g. "Personal jungle coach".
+   - **Product URL**: a GitHub repo link is fine. If this project is not on
+     GitHub, put the repo URL you intend to use, or a short public gist
+     describing it.
+   - **Product description**: be concrete and honest. Something like:
+     *"A local web app for my own use that reads my match history and match
+     timelines through match-v5 and summarises where I lose tempo as a
+     jungler. Single user, runs on my own machine, no accounts, no data
+     shared or resold. Uses match-v5, account-v1, league-v4 and Data
+     Dragon."*
+   - **Which APIs**: Match, Account, League, Summoner.
+4. Tick the boxes confirming you have read the policies, and submit.
+
+Approval is manual and usually takes a few days to a couple of weeks. You
+keep using the development key in the meantime - nothing in the project
+changes, you just paste the new key into the same place when it arrives.
+
+Two things that get applications rejected: a description that sounds like a
+commercial product when it is not, and a dead product URL. Keep it honest
+and make the link work.
+
+## Getting a development key (works today)
 
 The app reads your match history from Riot's servers, and Riot requires a key.
 It is free.
@@ -96,11 +127,15 @@ counted in the reference numbers but cannot be used for tempo.
 | Page | What is on it |
 | --- | --- |
 | Overview | Your biggest problem, then five scores out of 100 - one per area of the game. |
+| Focus | Pick one thing to work on. The app remembers where you started and tracks whether it moves. |
+| Map | Your first-clear routes, a death heatmap, where you spend the early game, and whether you were near the pit when objectives fell. |
 | Tempo | Gold, CS and XP against the enemy player in your role, minute by minute, plus the phase breakdown. |
 | Jungle | Clear speed, counter-jungling, scuttle, vision and objective control against the enemy jungler. Only appears if you play jungle. |
 | Builds | Item timings against your opponent, reactive itemisation, and which first item actually wins for you. |
+| Benchmarks | Your best games against your worst, and a reference set built from real ladder players above your rank. |
 | Matches | Every game, filterable by result and champion. |
-| One match | A page per game: the score, that game's own gold curve with your deaths marked, both build orders side by side, and what the enemy team was made of. |
+| One match | A page per game: the score, that game's own gold curve with your deaths marked, a minute-by-minute story of what happened, both build orders side by side, and what the enemy team was made of. |
+| `/live` | A second screen for while you are playing. Reads the game from the League client on this computer - no API key, no rate limit. |
 
 Every reference to a game anywhere in the app links to that game's page.
 "That Lee Sin game" is not an identifier when you play Lee Sin thirty times,

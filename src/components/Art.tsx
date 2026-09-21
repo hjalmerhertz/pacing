@@ -117,6 +117,61 @@ export function IconMatches({ className }: IconProps) {
   );
 }
 
+export function IconMap({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      className={className}
+      aria-hidden
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 5.5 7.5 4l5 1.8L17 4.3v10.2l-4.5 1.5-5-1.8L3 15.7z" />
+      <path d="M7.5 4v10.7M12.5 5.8V16" />
+    </svg>
+  );
+}
+
+export function IconFocus({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      className={className}
+      aria-hidden
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="10" cy="10" r="6.6" />
+      <circle cx="10" cy="10" r="3" />
+      <circle cx="10" cy="10" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function IconScales({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      className={className}
+      aria-hidden
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10 3.5V17M6 17h8M3.6 6.6h12.8" />
+      <path d="M3.6 6.6 1.8 11h3.6zM16.4 6.6 14.6 11h3.6z" />
+    </svg>
+  );
+}
+
 export function IconArrowRight({ className }: IconProps) {
   return (
     <svg

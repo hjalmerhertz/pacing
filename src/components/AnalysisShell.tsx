@@ -5,9 +5,12 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   IconBuilds,
+  IconFocus,
   IconJungle,
+  IconMap,
   IconMatches,
   IconOverview,
+  IconScales,
   IconTempo,
 } from "@/components/Art";
 import SearchForm from "@/components/SearchForm";
@@ -30,9 +33,12 @@ type State =
 
 const NAV = [
   { href: "/analyse", label: "Overview", Icon: IconOverview, exact: true },
+  { href: "/analyse/focus", label: "Focus", Icon: IconFocus },
+  { href: "/analyse/map", label: "Map", Icon: IconMap },
   { href: "/analyse/tempo", label: "Tempo", Icon: IconTempo },
   { href: "/analyse/jungle", label: "Jungle", Icon: IconJungle, jungleOnly: true },
   { href: "/analyse/builds", label: "Builds", Icon: IconBuilds },
+  { href: "/analyse/benchmarks", label: "Benchmarks", Icon: IconScales },
   { href: "/analyse/matches", label: "Matches", Icon: IconMatches },
 ];
 

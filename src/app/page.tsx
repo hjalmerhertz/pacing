@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArtCompass,
   ArtForge,
@@ -54,6 +55,14 @@ export default function HomePage() {
             Your Riot ID is the name and tag from the client, for example
             louder than you#lty. Games are cached after the first run, so
             coming back is fast.
+          </p>
+
+          <p className="mt-4 text-sm text-ink-soft">
+            In a game right now?{" "}
+            <Link href="/live" className="font-medium text-win underline">
+              Open the live companion
+            </Link>{" "}
+            - it reads the game running on this computer, no key needed.
           </p>
         </div>
       </section>

@@ -33,6 +33,11 @@
   --accent: #1baf7a;
   --grid: #e8e7e2;
 
+  /* The map needs its own surface, or it disappears into the card. */
+  --map-bg: #e6ece6;
+  --map-lane: #c2cdc2;
+  --map-river: #b9cfe4;
+
   /* Status - always paired with an icon and a word, never colour alone. */
   --good: #0ca30c;
   --warning: #fab219;
@@ -64,6 +69,10 @@
     --accent: #199e70;
     --grid: #262624;
 
+    --map-bg: #0f1518;
+    --map-lane: #2c3940;
+    --map-river: #1d3240;
+
     --good: #0ca30c;
     --warning: #fab219;
     --critical: #d03b3b;
@@ -92,6 +101,10 @@
   --loss: #d95926;
   --accent: #199e70;
   --grid: #262624;
+
+  --map-bg: #0f1518;
+  --map-lane: #2c3940;
+  --map-river: #1d3240;
 
   --brand-from: #3987e5;
   --brand-to: #199e70;

@@ -1,7 +1,12 @@
 import type { Report } from "./analysis";
 import type { BuildReport } from "./builds";
 import type { Struggle } from "./coach";
+import type { BenchmarkReport, YourRank } from "./benchmark";
+import type { BestWorstReport } from "./bestworst";
 import type { JungleReport } from "./jungle";
+import type { MapReport } from "./mapdata";
+import type { Moment } from "./narrative";
+import type { TrackedSeries } from "./trackable";
 import type { AreaScore } from "./scores";
 import type { TempoReport } from "./tempo";
 
@@ -35,6 +40,18 @@ export type FullReport = {
   struggles: Struggle[];
   /** Five scores out of 100, for the overview page. */
   scores: AreaScore[];
+  /** Positions, deaths and objective presence. */
+  map: MapReport | null;
+  /** Your best games against your worst. Null below 20 games. */
+  bestWorst: BestWorstReport | null;
+  /** Your Solo/Duo rank, when Riot will tell us. */
+  rank: YourRank;
+  /** Players two tiers up, if that reference set has been built. */
+  benchmark: BenchmarkReport | null;
+  /** Per-game values for every metric a focus goal can track. */
+  trackable: TrackedSeries;
+  /** A readable story of each game, keyed by match id. */
+  narratives: Record<string, Moment[]>;
   /** Per-match curves, so a single game can be drawn without refetching. */
   timelines: Record<string, MatchTimeline>;
 };

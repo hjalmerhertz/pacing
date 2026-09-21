@@ -9,6 +9,11 @@ import { buildBuildReport } from "@/lib/builds";
 import { buildStruggles } from "@/lib/coach";
 import { buildJungleReport } from "@/lib/jungle";
 import { buildScores } from "@/lib/scores";
+import { buildMapReport } from "@/lib/mapdata";
+import { buildBestWorst } from "@/lib/bestworst";
+import { buildNarrative } from "@/lib/narrative";
+import { buildTrackable } from "@/lib/trackable";
+import { getYourRank, readBenchmark, targetTier } from "@/lib/benchmark";
 import { isPlatform, platformLabel, type Platform } from "@/lib/regions";
 import {
   getAccount,
@@ -137,6 +142,14 @@ export async function GET(request: Request) {
                   timelineRaw,
                   game.participantId,
                   game.opponentParticipantId,
+                  match.info.participants.map((p) => ({
+                    participantId: p.participantId,
+                    teamId: p.teamId,
+                    championName: p.championName,
+                  })),
+                  match.info.participants.find(
+                    (p) => p.puuid === account.puuid,
+                  )?.teamId ?? 100,
                 );
                 analysed[index] = { game, timeline };
               }
@@ -191,6 +204,33 @@ export async function GET(request: Request) {
 
         const scores = buildScores(usable, tempo, builds, jungle, counterpart);
 
+        // The map only makes sense for the role you actually play, so it is
+        // built from those games rather than every game in the sample.
+        const roleGames =
+          role === "Unknown"
+            ? usable
+            : usable.filter((a) => a.game.role === role);
+        const map = buildMapReport(roleGames);
+        const bestWorst = buildBestWorst(roleGames);
+        const trackable = buildTrackable(usable, builds);
+
+        // A readable story per game, for the single-match pages.
+        const narratives: FullReport["narratives"] = {};
+        for (const { game, timeline } of usable) {
+          narratives[game.matchId] = buildNarrative(
+            game,
+            timeline,
+            builds.perMatch[game.matchId]?.mine ?? [],
+          );
+        }
+
+        send({ type: "stage", stage: "Checking your rank" });
+        const rank = await getYourRank(account.puuid, platform);
+        const target = targetTier(rank);
+        // Only read a reference set that already exists - building one is a
+        // separate, slower job the user starts deliberately.
+        const benchmark = await readBenchmark(platform, target.tier, role);
+
         // Per-match curves, so clicking into one game needs no new request.
         const timelines: FullReport["timelines"] = {};
         for (const { game, timeline } of usable) {
@@ -207,6 +247,7 @@ export async function GET(request: Request) {
           tempo,
           builds,
           jungle,
+          map,
           role,
           counterpart,
         });
@@ -226,6 +267,12 @@ export async function GET(request: Request) {
           struggles,
           scores,
           timelines,
+          map,
+          bestWorst,
+          rank,
+          benchmark,
+          trackable,
+          narratives,
         };
 
         send({ type: "done", report });

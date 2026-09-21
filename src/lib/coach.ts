@@ -1,5 +1,6 @@
 import type { BuildReport } from "./builds";
 import type { JungleReport } from "./jungle";
+import type { MapReport } from "./mapdata";
 import type { AnalysedGame, TempoReport } from "./tempo";
 
 /**
@@ -52,6 +53,14 @@ const GOLD_PER_CS = 21;
 /** A jungle camp is worth more than a single minion. */
 const GOLD_PER_CAMP = 35;
 
+/** Readable names for the objectives the timeline reports. */
+const OBJECTIVE_NAMES: Record<string, string> = {
+  DRAGON: "dragons",
+  BARON_NASHOR: "barons",
+  RIFTHERALD: "rift heralds",
+  HORDE: "void grubs",
+};
+
 const round = (n: number) => Math.round(n);
 /** Math.round(-0.2) is -0, which prints as "-0". This prints "0". */
 const whole = (n: number) => {
@@ -72,6 +81,8 @@ export type CoachInput = {
   builds: BuildReport;
   /** Null unless the player mains jungle. */
   jungle: JungleReport | null;
+  /** Positions and objective presence, when the timeline had them. */
+  map: MapReport | null;
   role: string;
   /** "enemy jungler", "lane opponent", and so on. */
   counterpart: string;
@@ -82,6 +93,7 @@ export function buildStruggles({
   tempo,
   builds,
   jungle,
+  map,
   role,
   counterpart,
 }: CoachInput): Struggle[] {
@@ -309,6 +321,36 @@ export function buildStruggles({
         drill:
           "After each clear, look at the map before you pick the next camp: take the one nearest whichever lane is pushed up. You farm the same number of camps and end up next to the fights instead of across the map from them.",
       });
+    }
+
+    // Position data answers the question the scoreboard cannot: were you
+    // actually standing near the objective when it was taken?
+    if (map) {
+      for (const presence of map.objectivePresence) {
+        if (presence.total < 15) continue;
+
+        const attendance = presence.present / presence.total;
+        const swing = presence.takenWhenPresent - presence.takenWhenAway;
+
+        // Only worth saying when showing up clearly changes the outcome
+        // *and* there is room to show up more often.
+        if (swing < 0.15 || attendance > 0.6) continue;
+
+        const name = OBJECTIVE_NAMES[presence.kind] ?? presence.kind;
+        struggles.push({
+          id: `objective-presence-${presence.kind}`,
+          impact: swing * 2600,
+          severity: swing > 0.3 && attendance < 0.4 ? "high" : "medium",
+          title: `You are near the pit for only ${pct(attendance)} of ${name}`,
+          evidence: `Across ${presence.total} ${name} taken by either team, you were within range for ${presence.present}. Your team secured ${pct(
+            presence.takenWhenPresent,
+          )} of the ones you were close to, and only ${pct(
+            presence.takenWhenAway,
+          )} of the ones you were not.`,
+          cost: `${pct(swing)} swing in who gets the objective, decided by whether you are there`,
+          drill: `${name} spawn on a fixed timer. Start moving 45 seconds before, and clear the two camps beside the pit while you wait - you get the camps either way and you are already standing there when it opens.`,
+        });
+      }
     }
 
     const vision = find("visionScorePerMinute");

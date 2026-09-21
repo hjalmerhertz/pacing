@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use } from "react";
 import { IconArrowRight } from "@/components/Art";
 import { matchDate } from "@/components/MatchChip";
+import GameStory from "@/components/GameStory";
 import MatchTempoChart from "@/components/MatchTempoChart";
 import { useReport } from "@/lib/reportContext";
 
@@ -37,6 +38,7 @@ export default function MatchPage({
   const game = report.basic.games.find((g) => g.matchId === matchId);
   const timeline = report.timelines[matchId];
   const build = report.builds.perMatch[matchId];
+  const story = report.narratives[matchId] ?? [];
 
   if (!game) {
     return (
@@ -151,6 +153,8 @@ export default function MatchPage({
           opponentChampion={game.opponentChampion}
         />
       )}
+
+      {story.length > 0 && <GameStory moments={story} />}
 
       {/* --- What each side built ----------------------------------- */}
       {build && (build.mine.length > 0 || build.theirs.length > 0) && (

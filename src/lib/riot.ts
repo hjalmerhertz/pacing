@@ -164,3 +164,91 @@ export async function isCached(key: string): Promise<boolean> {
   const { readCache } = await import("./cache");
   return (await readCache(key)) !== null;
 }
+
+// --- Rank and ladder ------------------------------------------------------
+// These endpoints live on the platform host (euw1, na1, ...) rather than the
+// regional cluster the match endpoints use.
+
+export type LeagueEntry = {
+  queueType: string;
+  tier: string;
+  rank: string;
+  leaguePoints: number;
+  wins: number;
+  losses: number;
+  summonerId?: string;
+  puuid?: string;
+};
+
+/** Riot's summoner record, which we only need for its internal id. */
+export async function getSummonerByPuuid(
+  puuid: string,
+  platform: Platform,
+): Promise<{ id: string; puuid: string }> {
+  return riotFetch(
+    `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`,
+  );
+}
+
+export async function getSummonerByid(
+  summonerId: string,
+  platform: Platform,
+): Promise<{ id: string; puuid: string }> {
+  return cached(`summoner_${platform}_${summonerId}`, () =>
+    riotFetch(
+      `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/${summonerId}`,
+    ),
+  );
+}
+
+/** A player's ranked entries. Empty when they are unranked. */
+export async function getRankedEntries(
+  puuid: string,
+  platform: Platform,
+): Promise<LeagueEntry[]> {
+  // Riot added a by-puuid route; older keys still need the summoner id, so
+  // try the direct route first and fall back rather than failing outright.
+  try {
+    return await riotFetch<LeagueEntry[]>(
+      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`,
+    );
+  } catch {
+    const summoner = await getSummonerByPuuid(puuid, platform);
+    return riotFetch<LeagueEntry[]>(
+      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`,
+    );
+  }
+}
+
+/** One page of a tier's ladder, e.g. everyone in Emerald II. */
+export async function getLadderPage(
+  platform: Platform,
+  tier: string,
+  division: string,
+  page = 1,
+): Promise<LeagueEntry[]> {
+  return riotFetch<LeagueEntry[]>(
+    `https://${platform}.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/${tier}/${division}?page=${page}`,
+  );
+}
+
+/**
+ * Master, Grandmaster and Challenger are not divided into I-IV and live on
+ * their own endpoints, so they need a separate call from the normal ladder.
+ */
+export async function getApexLeague(
+  platform: Platform,
+  tier: "MASTER" | "GRANDMASTER" | "CHALLENGER",
+): Promise<LeagueEntry[]> {
+  const slug =
+    tier === "MASTER"
+      ? "masterleagues"
+      : tier === "GRANDMASTER"
+        ? "grandmasterleagues"
+        : "challengerleagues";
+
+  const league = await riotFetch<{ entries: LeagueEntry[] }>(
+    `https://${platform}.api.riotgames.com/lol/league/v4/${slug}/by-queue/RANKED_SOLO_5x5`,
+  );
+  return league.entries ?? [];
+}
