@@ -13,6 +13,7 @@ import {
   IconScales,
   IconTempo,
 } from "@/components/Art";
+import Logo from "@/components/Logo";
 import SearchForm from "@/components/SearchForm";
 import { ReportProvider, termsToQuery, type SearchTerms } from "@/lib/reportContext";
 import type { FullReport, StreamMessage } from "@/lib/reportTypes";
@@ -275,20 +276,27 @@ export default function AnalysisShell({
         <main className="mx-auto w-full max-w-6xl px-6 py-8">{children}</main>
 
         <footer className="mx-auto w-full max-w-6xl px-6 pb-10 text-xs text-ink-muted">
-          Not endorsed by Riot Games. Match data from the Riot Games API.
+          <strong className="text-ink-soft">Pacing</strong> is not endorsed by
+          Riot Games. Match data from the Riot Games API.
         </footer>
       </div>
     </ReportProvider>
   );
 }
 
+/** The wordmark doubles as the way back to a new search. */
 function BackLink() {
   return (
-    <Link
-      href="/"
-      className="inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
-    >
-      <span aria-hidden>&larr;</span> New search
-    </Link>
+    <div className="flex items-center justify-between gap-4">
+      <Link href="/" className="transition-opacity hover:opacity-80">
+        <Logo />
+      </Link>
+      <Link
+        href="/"
+        className="text-sm text-ink-soft transition-colors hover:text-ink"
+      >
+        New search
+      </Link>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArtCompass } from "@/components/Art";
+import Logo from "@/components/Logo";
 
 /**
  * The live companion.
@@ -83,8 +84,8 @@ export default function LivePage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-10">
-      <Link href="/" className="text-sm text-ink-soft hover:text-ink">
-        <span aria-hidden>&larr;</span> Home
+      <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+        <Logo />
       </Link>
 
       <section className="card-hero brand-wash mt-3 flex items-start gap-5 p-6">

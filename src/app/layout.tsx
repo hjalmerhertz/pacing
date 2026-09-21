@@ -13,9 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LoL Post-Game Analysis",
+  // The template puts the brand after every page title automatically.
+  title: {
+    default: "Pacing - find the beat you are missing",
+    template: "%s · Pacing",
+  },
   description:
-    "See the pattern across your last 20 League of Legends games, not just the last scoreboard.",
+    "Pacing reads the minute-by-minute timeline of your games and shows where you lose the lead, what your build missed, and which games to go and watch.",
+  applicationName: "Pacing",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

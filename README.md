@@ -1,7 +1,36 @@
-# LoL Post-Game Coach
+# Pacing
+
+**Find the beat you're missing.**
 
 Reads the **minute-by-minute timeline** of your recent League games and works
 out where you lose the lead and what your build missed.
+
+## The brand
+
+| | |
+| --- | --- |
+| **Name** | Pacing |
+| **Domain** | `pacing.gg` (checked as unregistered - confirm at a registrar) |
+| **Tagline** | Find the beat you're missing. |
+| **One-liner** | Pacing reads the timeline, not the scoreboard. |
+
+**Why the name.** Every useful thing this app has found is a question of
+rhythm: the five-minute window where the lead evaporates, items arriving a
+minute late, arriving at the pit after the objective has already fallen.
+That is pacing. It also stays true if the app ever covers more than jungle,
+which a name like "Fullclear" would not.
+
+**The mark** is a tempo line - the same shape as the gold-difference curve the
+whole app is built around. It rises, dips, and one beat is marked. The logo
+and the hero chart are deliberately the same drawing. It lives in
+`src/components/Logo.tsx` and `src/app/icon.svg`.
+
+**Voice.** Plain and measured, never hype. Name a number, say what it costs,
+and admit when a sample is too small to mean anything. Never say something
+that is true by definition.
+
+**Colour** is the existing blue-to-green gradient. The data colours are
+validated for colour-blind separation and should not be changed casually.
 
 This is deliberately not a stats page. Anything you can read off op.gg is in a
 collapsed "Reference numbers" section at the bottom. The findings up top all
@@ -39,18 +68,23 @@ Keys** that do not expire. It is a form, not code.
 1. Go to <https://developer.riotgames.com> and sign in.
 2. Open **Register Product** (top right, under your name) and choose
    **Personal API Key**.
-3. Fill in the form. What matters:
-   - **Product name**: something plain, e.g. "Personal jungle coach".
-   - **Product URL**: a GitHub repo link is fine. If this project is not on
-     GitHub, put the repo URL you intend to use, or a short public gist
-     describing it.
-   - **Product description**: be concrete and honest. Something like:
-     *"A local web app for my own use that reads my match history and match
-     timelines through match-v5 and summarises where I lose tempo as a
-     jungler. Single user, runs on my own machine, no accounts, no data
-     shared or resold. Uses match-v5, account-v1, league-v4 and Data
-     Dragon."*
-   - **Which APIs**: Match, Account, League, Summoner.
+3. Fill in the form. Copy these in:
+   - **Product name**: `Pacing`
+   - **Product URL**: your GitHub repo for this project. If it is not on
+     GitHub yet, push it first - a dead link is the most common rejection.
+   - **Product description**:
+
+     > Pacing is a personal, non-commercial web app that I run locally on my
+     > own computer to review my own ranked games. It reads my match history
+     > and match timelines and summarises where I lose tempo as a jungler:
+     > gold and CS against the enemy jungler minute by minute, clear speed,
+     > objective presence, and item timings. It is a single-user tool with no
+     > accounts, no hosting, and no sharing or resale of any data. Everything
+     > downloaded is cached locally to stay well inside the rate limits.
+     > Endpoints used: ACCOUNT-V1, MATCH-V5, LEAGUE-V4, SUMMONER-V4, and Data
+     > Dragon for static item and champion data.
+
+   - **Which APIs**: Account, Match, League, Summoner.
 4. Tick the boxes confirming you have read the policies, and submit.
 
 Approval is manual and usually takes a few days to a couple of weeks. You
@@ -182,6 +216,6 @@ from red. Every value is also written out in text.
 
 ## Not affiliated with Riot
 
-This project is not endorsed by Riot Games and does not reflect the views or
+**Pacing** is not endorsed by Riot Games and does not reflect the views or
 opinions of Riot Games or anyone officially involved in producing or managing
 League of Legends.
