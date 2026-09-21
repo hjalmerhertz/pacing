@@ -51,7 +51,7 @@ export async function GET(request: Request) {
   const platformInput = searchParams.get("platform") ?? "euw1";
   const queueInput = searchParams.get("queue") ?? "all";
   const count = Math.min(
-    Math.max(Number(searchParams.get("count")) || 50, 1),
+    Math.max(Number(searchParams.get("count")) || 20, 1),
     100,
   );
 

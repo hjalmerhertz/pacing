@@ -1,6 +1,11 @@
 import "server-only";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import {
+  achieveFocus,
+  clearOpenFocus,
+  readFocuses,
+  writeFocus,
+  type StoredFocus,
+} from "./store";
 
 /**
  * The focus loop - one thing at a time, tracked until it is fixed.
@@ -9,14 +14,12 @@ import path from "node:path";
  * six findings and you close the tab. A coach makes you pick one, remembers
  * what it was, and tells you whether it moved.
  *
- * Stored as a small JSON file next to the project rather than in a database,
- * because it is one player on one machine. If this ever needs to follow you
- * between devices, this is the file to swap for Supabase - nothing else
- * knows how it is stored.
+ * Goals are keyed by Riot ID rather than by a user account. That is a
+ * deliberate trade: it means no sign-up, no password and no session for
+ * something that stores a metric name and two numbers, and it means anyone
+ * reviewing or trying the app can use every feature immediately. Riot IDs
+ * are already public, and nothing private is kept against them.
  */
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE = path.join(DATA_DIR, "focus.json");
 
 /** The metrics a goal can be set on, and how to read them out of a report. */
 export const TRACKABLE = {
@@ -65,77 +68,28 @@ export const TRACKABLE = {
 } as const;
 
 export type TrackableKey = keyof typeof TRACKABLE;
-
-export type Focus = {
-  metric: TrackableKey;
-  /** What the metric was when the goal was set. */
-  baseline: number;
-  /** What counts as fixed. */
-  target: number;
-  startedAt: number;
-  /** Set once the goal has been met, so the app can celebrate and move on. */
-  achievedAt: number | null;
-  /** The player this belongs to, so two accounts do not overwrite each other. */
-  riotId: string;
-  note: string;
-};
-
-type Store = { focuses: Focus[] };
-
-async function readStore(): Promise<Store> {
-  try {
-    return JSON.parse(await readFile(FILE, "utf8")) as Store;
-  } catch {
-    return { focuses: [] };
-  }
-}
-
-async function writeStore(store: Store): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(FILE, JSON.stringify(store, null, 2), "utf8");
-}
+export type Focus = StoredFocus;
 
 /** The goal currently being worked on for this account, if any. */
 export async function getFocus(riotId: string): Promise<Focus | null> {
-  const store = await readStore();
-  return (
-    store.focuses.find((f) => f.riotId === riotId && f.achievedAt === null) ??
-    null
-  );
+  const all = await readFocuses(riotId);
+  return all.find((f) => f.achievedAt === null) ?? null;
 }
 
 /** Everything this account has worked on, newest first. */
 export async function getFocusHistory(riotId: string): Promise<Focus[]> {
-  const store = await readStore();
-  return store.focuses
-    .filter((f) => f.riotId === riotId)
-    .sort((a, b) => b.startedAt - a.startedAt);
+  return readFocuses(riotId);
 }
 
+/** Only one open goal at a time - that is the whole point. */
 export async function setFocus(focus: Focus): Promise<void> {
-  const store = await readStore();
-  // Only one open goal at a time - that is the whole point.
-  store.focuses = store.focuses.filter(
-    (f) => !(f.riotId === focus.riotId && f.achievedAt === null),
-  );
-  store.focuses.push(focus);
-  await writeStore(store);
+  await writeFocus(focus);
 }
 
 export async function clearFocus(riotId: string): Promise<void> {
-  const store = await readStore();
-  store.focuses = store.focuses.filter(
-    (f) => !(f.riotId === riotId && f.achievedAt === null),
-  );
-  await writeStore(store);
+  await clearOpenFocus(riotId);
 }
 
 export async function markAchieved(riotId: string): Promise<void> {
-  const store = await readStore();
-  for (const focus of store.focuses) {
-    if (focus.riotId === riotId && focus.achievedAt === null) {
-      focus.achievedAt = Date.now();
-    }
-  }
-  await writeStore(store);
+  await achieveFocus(riotId);
 }

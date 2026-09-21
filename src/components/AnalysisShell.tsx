@@ -55,7 +55,7 @@ export default function AnalysisShell({
     riotId: (searchParams.get("riotId") ?? "").trim(),
     platform: searchParams.get("platform") || "euw1",
     queue: searchParams.get("queue") || "all",
-    count: Math.min(Math.max(Number(searchParams.get("count")) || 50, 1), 100),
+    count: Math.min(Math.max(Number(searchParams.get("count")) || 20, 1), 100),
   };
   const query = termsToQuery(terms);
 

@@ -29,7 +29,7 @@ export default function SearchForm({
   riotId = "",
   platform = "euw1",
   queue = "all",
-  count = "50",
+  count = "20",
 }: {
   riotId?: string;
   platform?: string;
