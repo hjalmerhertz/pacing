@@ -49,6 +49,9 @@ export type BuildMiss = {
   winRateWhenBought: number | null;
   winRateWhenMissed: number | null;
   examples: {
+    /** So the report can link straight to the game it is talking about. */
+    matchId: string;
+    playedAt: number;
     champion: string;
     opponentChampion: string | null;
     detail: string;
@@ -62,6 +65,15 @@ export type BuildReport = {
   itemTiming: ItemTiming[];
   firstItems: FirstItemStat[];
   misses: BuildMiss[];
+  /**
+   * The finished items each side bought, per match, so a single game page
+   * can show the build order without needing the item database in the
+   * browser.
+   */
+  perMatch: Record<
+    string,
+    { mine: { minute: number; itemId: number; name: string }[]; theirs: { minute: number; itemId: number; name: string }[] }
+  >;
 };
 
 const mean = (values: number[]) =>
@@ -182,6 +194,8 @@ export async function buildBuildReport(
       winRateWhenBought: rate(withItem),
       winRateWhenMissed: rate(withoutItem),
       examples: withoutItem.slice(0, 4).map((x) => ({
+        matchId: x.entry.game.matchId,
+        playedAt: x.entry.game.playedAt,
         champion: x.entry.game.championName,
         opponentChampion: x.entry.game.opponentChampion,
         detail: x.detail,
@@ -284,5 +298,21 @@ export async function buildBuildReport(
     },
   );
 
-  return { version: items.version, itemTiming, firstItems, misses };
+  // Per-match build orders for the single-game pages.
+  const perMatch: BuildReport["perMatch"] = {};
+  for (const { game, timeline } of analysed) {
+    const name = (id: number) => lookup(id)?.name ?? `Item ${id}`;
+    perMatch[game.matchId] = {
+      mine: legendaryMinutes(timeline.purchases, items).map((p) => ({
+        ...p,
+        name: name(p.itemId),
+      })),
+      theirs: legendaryMinutes(timeline.opponentPurchases, items).map((p) => ({
+        ...p,
+        name: name(p.itemId),
+      })),
+    };
+  }
+
+  return { version: items.version, itemTiming, firstItems, misses, perMatch };
 }

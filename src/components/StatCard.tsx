@@ -14,7 +14,7 @@ export default function StatCard({
   note?: string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-4">
+    <div className="card p-4">
       <p className="text-sm text-ink-soft">{label}</p>
       <p className="mt-1 text-3xl font-semibold tabular-nums text-ink">
         {value}

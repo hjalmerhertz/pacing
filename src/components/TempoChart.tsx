@@ -72,7 +72,7 @@ export default function TempoChart({
 }: Props) {
   if (points.length < 5) {
     return (
-      <figure className="rounded-xl border border-line bg-surface p-5">
+      <figure className="card p-5">
         <figcaption>
           <h3 className="font-semibold text-ink">{title}</h3>
           <p className="mt-1 text-sm text-ink-soft">
@@ -85,7 +85,7 @@ export default function TempoChart({
   }
 
   return (
-    <figure className="rounded-xl border border-line bg-surface p-5">
+    <figure className="card p-5">
       <figcaption className="mb-3">
         <h3 className="font-semibold text-ink">{title}</h3>
         <p className="text-sm text-ink-soft">{subtitle}</p>

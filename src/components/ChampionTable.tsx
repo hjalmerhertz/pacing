@@ -16,7 +16,7 @@ export default function ChampionTable({
   roles: RoleSummary[];
 }) {
   return (
-    <section className="rounded-xl border border-line bg-surface p-5">
+    <section className="card p-5">
       <h3 className="font-semibold text-ink">Champions and roles</h3>
       <p className="text-sm text-ink-soft">
         Sorted by how often you played them. Fewer than three games is too

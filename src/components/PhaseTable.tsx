@@ -16,7 +16,7 @@ export default function PhaseTable({
     `${n >= 0 ? "+" : "−"}${Math.round(Math.abs(n)).toLocaleString("en-GB")}`;
 
   return (
-    <section className="rounded-xl border border-line bg-surface p-5">
+    <section className="card p-5">
       <h3 className="font-semibold text-ink">Phase by phase</h3>
       <p className="text-sm text-ink-soft">
         Based on {tempo.gamesUsed}{" "}

@@ -91,6 +91,25 @@ one into `.env.local`; no restart needed.
 opponent, which only exists on Summoner's Rift. ARAM and Arena games are
 counted in the reference numbers but cannot be used for tempo.
 
+## The pages
+
+| Page | What is on it |
+| --- | --- |
+| Overview | Your biggest problem, then five scores out of 100 - one per area of the game. |
+| Tempo | Gold, CS and XP against the enemy player in your role, minute by minute, plus the phase breakdown. |
+| Jungle | Clear speed, counter-jungling, scuttle, vision and objective control against the enemy jungler. Only appears if you play jungle. |
+| Builds | Item timings against your opponent, reactive itemisation, and which first item actually wins for you. |
+| Matches | Every game, filterable by result and champion. |
+| One match | A page per game: the score, that game's own gold curve with your deaths marked, both build orders side by side, and what the enemy team was made of. |
+
+Every reference to a game anywhere in the app links to that game's page.
+"That Lee Sin game" is not an identifier when you play Lee Sin thirty times,
+so findings always carry the date, the opponent and the result.
+
+The scores are measured **against the opponents you actually played**, not
+against a rank. 50 means level with them. The real measurement is always
+printed next to the score.
+
 ## How it is put together
 
 | File | What it does |
@@ -106,7 +125,11 @@ counted in the reference numbers but cannot be used for tempo.
 | `src/lib/builds.ts` | Item timings and whether your build answered the enemy. |
 | `src/lib/ddragon.ts` | Riot's free item database - what each item actually gives. |
 | `src/lib/coach.ts` | Turns all of the above into the ranked list of problems. |
-| `src/components/` | The visual pieces. |
+| `src/lib/scores.ts` | The five area scores on the overview. |
+| `src/app/analyse/layout.tsx` | The shell. Runs the analysis once and keeps it while you switch tabs. |
+| `src/lib/reportContext.tsx` | Shares the finished report with every page. |
+| `src/components/Art.tsx` | The icons and spot illustrations, drawn inline as SVG so they follow the colour tokens. |
+| `src/components/` | The rest of the visual pieces. |
 
 Built with Next.js, TypeScript and Tailwind CSS. Charts use Recharts.
 

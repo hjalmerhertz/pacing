@@ -29,7 +29,7 @@ export default function BuildsSection({
   return (
     <div className="space-y-6">
       {/* --- Power spike timing ------------------------------------- */}
-      <section className="rounded-xl border border-line bg-surface p-5">
+      <section className="card p-5">
         <h3 className="font-semibold text-ink">
           When your items come online
         </h3>
@@ -109,7 +109,7 @@ export default function BuildsSection({
 
       {/* --- Reactive itemisation ------------------------------------ */}
       {builds.misses.length > 0 && (
-        <section className="rounded-xl border border-line bg-surface p-5">
+        <section className="card p-5">
           <h3 className="font-semibold text-ink">
             Building against what the enemy actually did
           </h3>
@@ -176,7 +176,7 @@ export default function BuildsSection({
 
       {/* --- First item choices -------------------------------------- */}
       {builds.firstItems.length > 0 && (
-        <section className="rounded-xl border border-line bg-surface p-5">
+        <section className="card p-5">
           <h3 className="font-semibold text-ink">Your first item choices</h3>
           <p className="text-sm text-ink-soft">
             Which opening item you finished, and how those games went.

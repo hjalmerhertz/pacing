@@ -8,7 +8,7 @@ export default function FormStrip({ games }: { games: PlayerGame[] }) {
   const oldestFirst = [...games].reverse();
 
   return (
-    <section className="rounded-xl border border-line bg-surface p-5">
+    <section className="card p-5">
       <h3 className="font-semibold text-ink">Recent form</h3>
       <p className="text-sm text-ink-soft">
         Oldest game on the left. Hover a square for the champion.

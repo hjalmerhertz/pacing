@@ -8,6 +8,7 @@ import {
 import { buildBuildReport } from "@/lib/builds";
 import { buildStruggles } from "@/lib/coach";
 import { buildJungleReport } from "@/lib/jungle";
+import { buildScores } from "@/lib/scores";
 import { isPlatform, platformLabel, type Platform } from "@/lib/regions";
 import {
   getAccount,
@@ -188,6 +189,19 @@ export async function GET(request: Request) {
             ? buildJungleReport(usable.filter((a) => a.game.role === "Jungle"))
             : null;
 
+        const scores = buildScores(usable, tempo, builds, jungle, counterpart);
+
+        // Per-match curves, so clicking into one game needs no new request.
+        const timelines: FullReport["timelines"] = {};
+        for (const { game, timeline } of usable) {
+          timelines[game.matchId] = {
+            goldDiff: timeline.goldDiff,
+            csDiff: timeline.csDiff,
+            deathMinutes: timeline.deathMinutes,
+            takedownMinutes: timeline.takedownMinutes,
+          };
+        }
+
         const struggles = buildStruggles({
           analysed: usable,
           tempo,
@@ -210,6 +224,8 @@ export async function GET(request: Request) {
           builds,
           jungle,
           struggles,
+          scores,
+          timelines,
         };
 
         send({ type: "done", report });

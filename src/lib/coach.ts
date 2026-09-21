@@ -29,6 +29,22 @@ export type Struggle = {
   cost: string;
   /** What to actually do differently. */
   drill: string;
+  /**
+   * The specific games this finding came from, so the reader can click
+   * through and see which ones they were. "That Lee Sin game" is not an
+   * identifier when you play Lee Sin thirty times.
+   */
+  examples?: StruggleExample[];
+};
+
+export type StruggleExample = {
+  matchId: string;
+  playedAt: number;
+  champion: string;
+  opponentChampion: string | null;
+  win: boolean;
+  /** Why this game is listed. */
+  note: string;
 };
 
 /** One CS is worth roughly this much gold once you include the wave's value. */
@@ -364,19 +380,20 @@ export function buildStruggles({
     // habits, and does not belong in a list of things costing you games.
     if (gap < 0.08) continue;
 
-    const examples = miss.examples
-      .slice(0, 3)
-      .map((e) => `${e.champion} vs ${e.opponentChampion ?? "?"} (${e.detail})`)
-      .join("; ");
-
     struggles.push({
       id: `build-${miss.kind}`,
       impact: 300 + gap * 4000,
       severity: gap > 0.2 ? "high" : "medium",
       title: `${miss.title}: missing in ${miss.missedGames} of ${miss.relevantGames} games`,
-      evidence:
-        `In ${miss.relevantGames} games this was called for by what the enemy actually did to you, and nobody on your team had it ${miss.missedGames} times. ` +
-        (examples ? `For example: ${examples}.` : ""),
+      evidence: `In ${miss.relevantGames} games this was called for by what the enemy actually did to you, and nobody on your team had it ${miss.missedGames} times.`,
+      examples: miss.examples.slice(0, 4).map((e) => ({
+        matchId: e.matchId,
+        playedAt: e.playedAt,
+        champion: e.champion,
+        opponentChampion: e.opponentChampion,
+        win: e.win,
+        note: e.detail,
+      })),
       cost:
         boughtRate !== null && missedRate !== null
           ? `${pct(boughtRate)} win rate when it is covered, ${pct(
@@ -415,6 +432,17 @@ export function buildStruggles({
         )}) against ${pct(overallRate)} across everything else you played.`,
         cost: `${pct(overallRate - rate)} lower win rate than your average`,
         drill: `With ${entry.games} games this is past coin-flip territory. Either work out what the difference is against your better champions, or stop picking ${champion} while you fix something else.`,
+        examples: analysed
+          .filter((a) => a.game.championName === champion && !a.game.win)
+          .slice(0, 4)
+          .map((a) => ({
+            matchId: a.game.matchId,
+            playedAt: a.game.playedAt,
+            champion: a.game.championName,
+            opponentChampion: a.game.opponentChampion,
+            win: a.game.win,
+            note: `${a.game.kills}/${a.game.deaths}/${a.game.assists} in ${Math.round(a.game.minutes)} min`,
+          })),
       });
     }
   }

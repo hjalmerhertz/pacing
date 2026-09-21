@@ -2,6 +2,7 @@ import type { Report } from "./analysis";
 import type { BuildReport } from "./builds";
 import type { Struggle } from "./coach";
 import type { JungleReport } from "./jungle";
+import type { AreaScore } from "./scores";
 import type { TempoReport } from "./tempo";
 
 /**
@@ -32,6 +33,18 @@ export type FullReport = {
   /** Only present when you main jungle. */
   jungle: JungleReport | null;
   struggles: Struggle[];
+  /** Five scores out of 100, for the overview page. */
+  scores: AreaScore[];
+  /** Per-match curves, so a single game can be drawn without refetching. */
+  timelines: Record<string, MatchTimeline>;
+};
+
+/** Just enough of one game's timeline to draw its page. */
+export type MatchTimeline = {
+  goldDiff: number[];
+  csDiff: number[];
+  deathMinutes: number[];
+  takedownMinutes: number[];
 };
 
 /** The little JSON messages the analysis endpoint streams while it works. */

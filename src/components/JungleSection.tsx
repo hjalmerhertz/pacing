@@ -51,7 +51,7 @@ export default function JungleSection({ jungle }: { jungle: JungleReport }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-line bg-surface p-5">
+      <section className="card p-5">
         <h3 className="font-semibold text-ink">Your jungle, against theirs</h3>
         <p className="text-sm text-ink-soft">
           Across {jungle.games} jungle games
@@ -116,7 +116,7 @@ export default function JungleSection({ jungle }: { jungle: JungleReport }) {
       </section>
 
       {jungle.objectives.length > 0 && (
-        <section className="rounded-xl border border-line bg-surface p-5">
+        <section className="card p-5">
           <h3 className="font-semibold text-ink">Objective control</h3>
           <p className="text-sm text-ink-soft">
             How the neutral objectives split between the two teams in your
