@@ -1,9 +1,11 @@
 import type { AnalysedGame } from "./tempo";
 import {
+  expectedToBuildResistances,
   givesArmor,
   givesMagicResist,
   isAntiHeal,
   isLegendary,
+  loadChampions,
   loadItems,
   type ItemDatabase,
 } from "./ddragon";
@@ -90,7 +92,10 @@ function legendaryMinutes(
 export async function buildBuildReport(
   analysed: AnalysedGame[],
 ): Promise<BuildReport> {
-  const items = await loadItems();
+  const [items, champions] = await Promise.all([
+    loadItems(),
+    loadChampions(),
+  ]);
   const lookup = (id: number) => items.items[String(id)];
 
   // --- How fast do your items come online, versus your opponent's? -----
@@ -190,12 +195,26 @@ export async function buildBuildReport(
     test: (id: number) => boolean,
   ) => entry.game.items.some(test);
 
+  // Resistances are only expected of champions whose builds normally
+  // include them. Telling an assassin to buy armour is worse than silence.
+  const buildsResistances = (championName: string) =>
+    expectedToBuildResistances(champions[championName]?.tags);
+
   checkReactive(
     "magic-resist",
     "Magic resist against magic-damage teams",
     ({ game }) => ({
-      relevant: game.isRift && game.enemyMagicShare >= 0.6,
-      detail: `${Math.round(game.enemyMagicShare * 100)}% of enemy damage was magic`,
+      // Three conditions, all measured from that same game: the enemy dealt
+      // mostly magic, *you personally* took mostly magic, and your champion
+      // is the kind that buys resistances at all.
+      relevant:
+        game.isRift &&
+        game.enemyMagicShare >= 0.6 &&
+        game.tookMagicShare >= 0.5 &&
+        buildsResistances(game.championName),
+      detail: `${Math.round(
+        game.tookMagicShare * 100,
+      )}% of the damage you took was magic`,
     }),
     (entry) =>
       finalItemsHave(entry, (id) => {
@@ -208,8 +227,14 @@ export async function buildBuildReport(
     "armor",
     "Armor against physical-damage teams",
     ({ game }) => ({
-      relevant: game.isRift && game.enemyPhysicalShare >= 0.6,
-      detail: `${Math.round(game.enemyPhysicalShare * 100)}% of enemy damage was physical`,
+      relevant:
+        game.isRift &&
+        game.enemyPhysicalShare >= 0.6 &&
+        game.tookPhysicalShare >= 0.5 &&
+        buildsResistances(game.championName),
+      detail: `${Math.round(
+        game.tookPhysicalShare * 100,
+      )}% of the damage you took was physical`,
     }),
     (entry) =>
       finalItemsHave(entry, (id) => {
@@ -239,13 +264,24 @@ export async function buildBuildReport(
         game.enemyHealing / Math.max(game.minutes, 1),
       ).toLocaleString("en-GB")} enemy healing per minute`,
     }),
-    // "Ever bought" rather than "still holding": Executioner's Calling is
-    // often sold late, but it still did its job.
-    (entry) =>
-      entry.timeline.purchases.some((p) => {
+    // Counts as covered if ANYONE on your team had it. Grievous Wounds is a
+    // team requirement, not a personal one - if your ADC already bought it,
+    // you buying a second one is wasted gold, not good play.
+    //
+    // "Ever bought" for your own purchases, because Executioner's Calling is
+    // often sold late but still did its job.
+    (entry) => {
+      const mineEver = entry.timeline.purchases.some((p) => {
         const item = lookup(p.itemId);
         return item ? isAntiHeal(item) : false;
-      }),
+      });
+      if (mineEver) return true;
+
+      return entry.game.teamItems.some((id) => {
+        const item = lookup(id);
+        return item ? isAntiHeal(item) : false;
+      });
+    },
   );
 
   return { version: items.version, itemTiming, firstItems, misses };

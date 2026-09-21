@@ -65,6 +65,65 @@ export function itemIconUrl(version: string, itemId: number): string {
   return `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${itemId}.png`;
 }
 
+// --- Champion classes -----------------------------------------------------
+
+export type ChampionInfo = {
+  /** Riot's own class tags, e.g. ["Assassin", "Mage"]. */
+  tags: string[];
+};
+
+export type ChampionDatabase = Record<string, ChampionInfo>;
+
+let championsInMemory: ChampionDatabase | null = null;
+
+/** Champion classes, keyed by the name the match data uses (e.g. "LeeSin"). */
+export async function loadChampions(): Promise<ChampionDatabase> {
+  if (championsInMemory) return championsInMemory;
+
+  const version = await latestVersion();
+  const database = await cached<ChampionDatabase>(
+    `ddragon_champions_${version}`,
+    async () => {
+      const response = await fetch(
+        `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
+      );
+      if (!response.ok) {
+        throw new Error("Could not read the Data Dragon champions");
+      }
+      const json = (await response.json()) as {
+        data: Record<string, { id: string; tags: string[] }>;
+      };
+      const map: ChampionDatabase = {};
+      for (const champion of Object.values(json.data)) {
+        map[champion.id] = { tags: champion.tags };
+      }
+      return map;
+    },
+  );
+
+  championsInMemory = database;
+  return database;
+}
+
+/**
+ * Should this champion be expected to buy resistances at all?
+ *
+ * Assassins and marksmen win by deleting things before they get hit, and
+ * telling a Zed to buy armour is worse advice than saying nothing. Fighters,
+ * tanks and supports are the classes where a missing resistance is a genuine
+ * mistake.
+ */
+export function expectedToBuildResistances(tags: string[] | undefined): boolean {
+  if (!tags || tags.length === 0) return false;
+  const defensiveClasses = ["Tank", "Fighter", "Support"];
+  const skirmishClasses = ["Assassin", "Marksman"];
+
+  // A champion tagged both (Lee Sin is Fighter + Assassin) counts as a
+  // fighter: those builds normally do include a resistance item.
+  if (tags.some((tag) => defensiveClasses.includes(tag))) return true;
+  return !tags.some((tag) => skirmishClasses.includes(tag));
+}
+
 // --- Questions we ask about an item ---------------------------------------
 
 /**

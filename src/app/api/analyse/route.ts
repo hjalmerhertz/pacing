@@ -1,6 +1,13 @@
-import { buildReport, toPlayerGame, type PlayerGame } from "@/lib/analysis";
+import {
+  buildReport,
+  counterpartLabel,
+  primaryRole,
+  toPlayerGame,
+  type PlayerGame,
+} from "@/lib/analysis";
 import { buildBuildReport } from "@/lib/builds";
 import { buildStruggles } from "@/lib/coach";
+import { buildJungleReport } from "@/lib/jungle";
 import { isPlatform, platformLabel, type Platform } from "@/lib/regions";
 import {
   getAccount,
@@ -170,7 +177,25 @@ export async function GET(request: Request) {
         const basic = buildReport(games);
         const tempo = buildTempoReport(usable);
         const builds = await buildBuildReport(usable);
-        const struggles = buildStruggles(usable, tempo, builds);
+
+        // Which role is this player actually asking about? A jungler gets a
+        // different report from a mid laner, because a jungler has no lane.
+        const role = primaryRole(games);
+        const counterpart = counterpartLabel(role);
+
+        const jungle =
+          role === "Jungle"
+            ? buildJungleReport(usable.filter((a) => a.game.role === "Jungle"))
+            : null;
+
+        const struggles = buildStruggles({
+          analysed: usable,
+          tempo,
+          builds,
+          jungle,
+          role,
+          counterpart,
+        });
 
         const report: FullReport = {
           displayName,
@@ -178,9 +203,12 @@ export async function GET(request: Request) {
           platformLabel: platformLabel(platform),
           gamesAnalysed: usable.length,
           gamesRequested: matchIds.length,
+          role,
+          counterpart,
           basic,
           tempo,
           builds,
+          jungle,
           struggles,
         };
 

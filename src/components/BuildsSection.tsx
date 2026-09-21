@@ -19,7 +19,13 @@ function clock(minutes: number | null): string {
   return `${whole}:${String(seconds).padStart(2, "0")}`;
 }
 
-export default function BuildsSection({ builds }: { builds: BuildReport }) {
+export default function BuildsSection({
+  builds,
+  counterpart,
+}: {
+  builds: BuildReport;
+  counterpart: string;
+}) {
   return (
     <div className="space-y-6">
       {/* --- Power spike timing ------------------------------------- */}
@@ -28,7 +34,7 @@ export default function BuildsSection({ builds }: { builds: BuildReport }) {
           When your items come online
         </h3>
         <p className="text-sm text-ink-soft">
-          Your finished items against your lane opponent&apos;s, averaged.
+          Your finished items against the {counterpart}&apos;s, averaged.
           Being a minute late on a first item means a minute of playing the
           weaker champion.
         </p>
@@ -39,7 +45,7 @@ export default function BuildsSection({ builds }: { builds: BuildReport }) {
               <tr className="border-b border-line text-left text-ink-soft">
                 <th className="py-2 pr-3 font-medium">Item</th>
                 <th className="py-2 pr-3 text-right font-medium">You</th>
-                <th className="py-2 pr-3 text-right font-medium">Opponent</th>
+                <th className="py-2 pr-3 text-right font-medium">Them</th>
                 <th className="py-2 text-right font-medium">Difference</th>
               </tr>
             </thead>

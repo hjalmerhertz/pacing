@@ -1,6 +1,7 @@
 import type { Report } from "./analysis";
 import type { BuildReport } from "./builds";
 import type { Struggle } from "./coach";
+import type { JungleReport } from "./jungle";
 import type { TempoReport } from "./tempo";
 
 /**
@@ -21,9 +22,15 @@ export type FullReport = {
   gamesAnalysed: number;
   /** Games Riot gave us before remakes and failures were dropped. */
   gamesRequested: number;
+  /** The role you mostly play, or "Unknown" if you spread across several. */
+  role: string;
+  /** What to call the enemy player in that role, e.g. "enemy jungler". */
+  counterpart: string;
   basic: Report;
   tempo: TempoReport;
   builds: BuildReport;
+  /** Only present when you main jungle. */
+  jungle: JungleReport | null;
   struggles: Struggle[];
 };
 

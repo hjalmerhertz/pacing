@@ -5,7 +5,13 @@ import type { TempoReport } from "@/lib/tempo";
  * which one is not. The gold column is the one that matters: it is how much
  * ground you gained or lost against your lane opponent during that stretch.
  */
-export default function PhaseTable({ tempo }: { tempo: TempoReport }) {
+export default function PhaseTable({
+  tempo,
+  counterpart,
+}: {
+  tempo: TempoReport;
+  counterpart: string;
+}) {
   const signed = (n: number) =>
     `${n >= 0 ? "+" : "−"}${Math.round(Math.abs(n)).toLocaleString("en-GB")}`;
 
@@ -14,8 +20,8 @@ export default function PhaseTable({ tempo }: { tempo: TempoReport }) {
       <h3 className="font-semibold text-ink">Phase by phase</h3>
       <p className="text-sm text-ink-soft">
         Based on {tempo.gamesUsed}{" "}
-        {tempo.gamesUsed === 1 ? "game" : "games"} where a lane opponent could
-        be identified.
+        {tempo.gamesUsed === 1 ? "game" : "games"} where the {counterpart} could be
+        identified.
       </p>
 
       <div className="mt-4 overflow-x-auto">
@@ -24,7 +30,7 @@ export default function PhaseTable({ tempo }: { tempo: TempoReport }) {
             <tr className="border-b border-line text-left text-ink-soft">
               <th className="py-2 pr-3 font-medium">Phase</th>
               <th className="py-2 pr-3 text-right font-medium">
-                Gold swing vs opponent
+                Gold swing vs them
               </th>
               <th className="py-2 pr-3 text-right font-medium">CS / min</th>
               <th className="py-2 text-right font-medium">Deaths / game</th>
@@ -58,7 +64,7 @@ export default function PhaseTable({ tempo }: { tempo: TempoReport }) {
       </div>
 
       <p className="mt-3 text-xs text-ink-muted">
-        A negative gold swing means you lost ground to your opponent during
+        A negative gold swing means you lost ground to the {counterpart} during
         that phase, regardless of whether you were ahead overall.
       </p>
     </section>

@@ -2,6 +2,7 @@ import type { FullReport } from "@/lib/reportTypes";
 import BuildsSection from "./BuildsSection";
 import ChampionTable from "./ChampionTable";
 import FormStrip from "./FormStrip";
+import JungleSection from "./JungleSection";
 import PhaseTable from "./PhaseTable";
 import SearchForm from "./SearchForm";
 import StatCard from "./StatCard";
@@ -14,7 +15,7 @@ const signedGold = (n: number) =>
   `${n >= 0 ? "+" : "−"}${Math.round(Math.abs(n)).toLocaleString("en-GB")}`;
 
 export default function ReportView({ report }: { report: FullReport }) {
-  const { basic, tempo, builds, struggles } = report;
+  const { basic, tempo, builds, struggles, jungle, counterpart } = report;
   const goldAt15 = tempo.goldDiffAt.find((g) => g.minute === 15);
 
   return (
@@ -25,8 +26,9 @@ export default function ReportView({ report }: { report: FullReport }) {
         </h1>
         <p className="mt-1 text-ink-soft">
           {report.gamesAnalysed} games on {report.platformLabel}
+          {report.role !== "Unknown" && ` · ${report.role} main`}
           {tempo.gamesUsed < report.gamesAnalysed &&
-            ` · ${tempo.gamesUsed} with a lane opponent to compare against`}
+            ` · ${tempo.gamesUsed} with a ${counterpart} to compare against`}
         </p>
       </header>
 
@@ -41,11 +43,11 @@ export default function ReportView({ report }: { report: FullReport }) {
       {/* The headline numbers: two of these are the ones that matter. */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Gold vs opponent at 15"
+          label={`Gold vs ${counterpart} at 15`}
           value={goldAt15 ? signedGold(goldAt15.value) : "-"}
           note={
             goldAt15
-              ? `across ${goldAt15.games} games with a lane opponent`
+              ? `across ${goldAt15.games} games with a ${counterpart}`
               : "needs Summoner's Rift games"
           }
         />
@@ -81,9 +83,11 @@ export default function ReportView({ report }: { report: FullReport }) {
       {/* The point of the whole app. */}
       <StruggleList struggles={struggles} />
 
+      {jungle && jungle.games >= 3 && <JungleSection jungle={jungle} />}
+
       <TempoChart
-        title="Gold against your lane opponent, minute by minute"
-        subtitle="Averaged across every game where you had a direct opponent. This is the shape of your game."
+        title={`Gold against the ${counterpart}, minute by minute`}
+        subtitle="Averaged across every game where that opponent could be identified. This is the shape of your game."
         points={tempo.goldDiff}
         worstWindow={tempo.worstWindow}
         unit="gold"
@@ -91,16 +95,20 @@ export default function ReportView({ report }: { report: FullReport }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TempoChart
-          title="CS against your lane opponent"
-          subtitle="The farming half of the same story, in minions rather than gold."
+          title={`CS against the ${counterpart}`}
+          subtitle={
+            report.role === "Jungle"
+              ? "Camps and minions combined, against the enemy jungler's."
+              : "The farming half of the same story, in minions rather than gold."
+          }
           points={tempo.csDiff}
           unit="CS"
           decimals={1}
         />
-        <PhaseTable tempo={tempo} />
+        <PhaseTable tempo={tempo} counterpart={counterpart} />
       </div>
 
-      <BuildsSection builds={builds} />
+      <BuildsSection builds={builds} counterpart={counterpart} />
 
       <details className="rounded-xl border border-line bg-surface p-5">
         <summary className="cursor-pointer font-semibold text-ink">

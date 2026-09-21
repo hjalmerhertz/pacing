@@ -35,6 +35,13 @@ export type RiotParticipant = {
   trueDamageDealtToChampions: number;
   totalHeal: number;
   totalHealsOnTeammates?: number;
+  /** What actually hurt you, which is not the same as what the enemy dealt. */
+  physicalDamageTaken: number;
+  magicDamageTaken: number;
+  trueDamageTaken: number;
+  totalDamageTaken: number;
+  /** Riot's own pre-computed extras, including several jungle metrics. */
+  challenges?: Record<string, number>;
   champLevel: number;
   /** The seven item slots at the end of the game (slot 6 is the trinket). */
   item0: number;
@@ -47,6 +54,12 @@ export type RiotParticipant = {
   gameEndedInEarlySurrender?: boolean;
 };
 
+export type RiotTeam = {
+  teamId: number;
+  win: boolean;
+  objectives: Record<string, { first: boolean; kills: number }>;
+};
+
 export type RiotMatch = {
   metadata: { matchId: string };
   info: {
@@ -56,6 +69,7 @@ export type RiotMatch = {
     queueId: number;
     gameMode: string;
     participants: RiotParticipant[];
+    teams?: RiotTeam[];
   };
 };
 
@@ -102,6 +116,20 @@ export type PlayerGame = {
   /** Total healing done by the enemy team, for judging anti-heal purchases. */
   enemyHealing: number;
   enemyChampions: string[];
+  /** Final items of everyone on your team, so we can see what was already covered. */
+  teamItems: number[];
+  /** What damage actually landed on *you*, as shares of 0-1. */
+  tookPhysicalShare: number;
+  tookMagicShare: number;
+
+  // --- Jungle-specific numbers, straight from Riot ----------------------
+  /** Riot's own extra metrics for this game; empty for very old matches. */
+  challenges: Record<string, number>;
+  /** The same metrics for the enemy player in your role, when there is one. */
+  opponentChallenges: Record<string, number> | null;
+  /** Objectives your team took, and the enemy team's, by type. */
+  teamObjectives: Record<string, number>;
+  enemyObjectives: Record<string, number>;
 };
 
 const QUEUE_NAMES: Record<number, string> = {
@@ -215,7 +243,73 @@ export function toPlayerGame(
     enemyMagicShare: enemyTotalDamage > 0 ? enemyMagic / enemyTotalDamage : 0,
     enemyHealing: enemies.reduce((sum, p) => sum + (p.totalHeal ?? 0), 0),
     enemyChampions: enemies.map((p) => p.championName),
+
+    // Every item held by anyone on your team. Used to check whether
+    // something like Grievous Wounds was already covered by a team-mate,
+    // in which case buying it yourself is not required.
+    teamItems: team.flatMap((p) =>
+      [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5].filter(
+        (id) => id > 0,
+      ),
+    ),
+    tookPhysicalShare:
+      me.totalDamageTaken > 0 ? me.physicalDamageTaken / me.totalDamageTaken : 0,
+    tookMagicShare:
+      me.totalDamageTaken > 0 ? me.magicDamageTaken / me.totalDamageTaken : 0,
+
+    challenges: me.challenges ?? {},
+    opponentChallenges: opponent?.challenges ?? null,
+    teamObjectives: objectiveCounts(match, me.teamId),
+    enemyObjectives: objectiveCounts(match, me.teamId === 100 ? 200 : 100),
   };
+}
+
+/** Dragons, heralds, barons, grubs and towers taken by one team. */
+function objectiveCounts(
+  match: RiotMatch,
+  teamId: number,
+): Record<string, number> {
+  const team = match.info.teams?.find((t) => t.teamId === teamId);
+  if (!team) return {};
+  return Object.fromEntries(
+    Object.entries(team.objectives).map(([name, value]) => [name, value.kills]),
+  );
+}
+
+/**
+ * The role you actually play, so the report can talk about the right things.
+ * A jungler does not have a lane opponent and should not be given lane advice.
+ */
+export function primaryRole(games: PlayerGame[]): string {
+  const counts = new Map<string, number>();
+  for (const game of games) {
+    if (game.role === "Unknown") continue;
+    counts.set(game.role, (counts.get(game.role) ?? 0) + 1);
+  }
+  let best = "Unknown";
+  let bestCount = 0;
+  for (const [role, count] of counts) {
+    if (count > bestCount) {
+      best = role;
+      bestCount = count;
+    }
+  }
+  // Only claim a main role if it is actually most of what you play.
+  return bestCount >= games.length * 0.5 ? best : "Unknown";
+}
+
+/** What to call the enemy player in your role. */
+export function counterpartLabel(role: string): string {
+  switch (role) {
+    case "Jungle":
+      return "enemy jungler";
+    case "Support":
+      return "enemy support";
+    case "ADC":
+      return "enemy ADC";
+    default:
+      return "lane opponent";
+  }
 }
 
 /**
