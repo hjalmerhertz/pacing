@@ -10,6 +10,17 @@ export const QUEUE_OPTIONS = [
 ] as const;
 
 /**
+ * How many games to pull. More games means steadier conclusions, but every
+ * game costs two requests to Riot and a free key allows 100 every two
+ * minutes - so 100 games takes a few minutes the first time.
+ */
+export const COUNT_OPTIONS = [
+  { value: "20", label: "20 games (fast)" },
+  { value: "50", label: "50 games" },
+  { value: "100", label: "100 games (slow first run)" },
+] as const;
+
+/**
  * A plain HTML form that submits to /analyse as a normal link with a query
  * string. No JavaScript involved, which means it also works while the page
  * is still loading.
@@ -18,7 +29,7 @@ export default function SearchForm({
   riotId = "",
   platform = "euw1",
   queue = "all",
-  count = "20",
+  count = "50",
 }: {
   riotId?: string;
   platform?: string;
@@ -29,7 +40,7 @@ export default function SearchForm({
     <form
       action="/analyse"
       method="get"
-      className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]"
+      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]"
     >
       <div>
         <label
@@ -90,7 +101,26 @@ export default function SearchForm({
         </select>
       </div>
 
-      <input type="hidden" name="count" value={count} />
+      <div>
+        <label
+          htmlFor="count"
+          className="mb-1 block text-sm font-medium text-ink-soft"
+        >
+          Sample size
+        </label>
+        <select
+          id="count"
+          name="count"
+          defaultValue={count}
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink focus:border-win focus:outline-none"
+        >
+          {COUNT_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <button
         type="submit"

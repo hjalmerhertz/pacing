@@ -1,47 +1,49 @@
-import Link from "next/link";
 import SearchForm from "@/components/SearchForm";
 
 export default function HomePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-16">
       <h1 className="text-4xl font-semibold tracking-tight text-ink">
-        Post-game analysis
+        Post-game coach
       </h1>
       <p className="mt-3 text-lg text-ink-soft">
-        Look at your last 20 League games at once and find the pattern, not
-        just the scoreboard.
+        Reads the minute-by-minute timeline of your games and works out where
+        you lose the lead and what your build missed.
       </p>
 
       <div className="mt-8 rounded-xl border border-line bg-surface p-5">
         <SearchForm />
       </div>
 
-      <p className="mt-3 text-sm text-ink-soft">
-        No Riot API key yet?{" "}
-        <Link href="/analyse?demo=1" className="text-win underline">
-          See an example report
-        </Link>{" "}
-        built from made-up games.
-      </p>
-
       <section className="mt-10 text-sm text-ink-soft">
-        <h2 className="font-medium text-ink">What you get</h2>
+        <h2 className="font-medium text-ink">What it actually measures</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Win rate and form across your recent games.</li>
           <li>
-            How your KDA and farming move game to game, with wins and losses
-            marked.
+            Your gold, CS and XP against{" "}
+            <strong className="text-ink">your actual lane opponent</strong>,
+            every minute of every game.
           </li>
           <li>
-            A side-by-side of your averages in wins versus losses - the fastest
-            way to see what actually decides your games.
+            The five-minute window where you lose the most ground - the point
+            in the game worth reviewing.
           </li>
-          <li>A breakdown per champion and per role.</li>
-          <li>Plain-language notes on what to work on.</li>
+          <li>
+            When your items come online compared to your opponent&apos;s.
+          </li>
+          <li>
+            Whether you bought resistances and Grievous Wounds in the games
+            that called for them, judged on the damage the enemy team actually
+            dealt.
+          </li>
+          <li>
+            A ranked list of your problems, each with an estimated cost in
+            gold per game.
+          </li>
         </ul>
         <p className="mt-4 text-ink-muted">
           Your Riot ID is the name and tag you see in the client, for example
-          Hide on bush#KR1.
+          louder than you#lty. Games are cached after the first run, so
+          re-analysing is fast.
         </p>
       </section>
     </main>

@@ -11,6 +11,8 @@
 // use, which is fine: extra fields in the response are simply ignored.
 
 export type RiotParticipant = {
+  /** Riot's 1-10 slot number for this player in this match. */
+  participantId: number;
   puuid: string;
   championId: number;
   championName: string;
@@ -27,7 +29,21 @@ export type RiotParticipant = {
   wardsPlaced: number;
   wardsKilled: number;
   totalDamageDealtToChampions: number;
+  /** The three damage types, used to work out what the enemy team threatened with. */
+  physicalDamageDealtToChampions: number;
+  magicDamageDealtToChampions: number;
+  trueDamageDealtToChampions: number;
+  totalHeal: number;
+  totalHealsOnTeammates?: number;
   champLevel: number;
+  /** The seven item slots at the end of the game (slot 6 is the trinket). */
+  item0: number;
+  item1: number;
+  item2: number;
+  item3: number;
+  item4: number;
+  item5: number;
+  item6: number;
   gameEndedInEarlySurrender?: boolean;
 };
 
@@ -70,6 +86,22 @@ export type PlayerGame = {
   damageShare: number;
   /** Share of the team's kills you took part in, 0-1. */
   killParticipation: number;
+
+  // --- Context needed to judge your build, rather than just your score ---
+
+  /** Riot's 1-10 slot for you in this match, used to read the timeline. */
+  participantId: number;
+  /** The enemy in your role, or null in ARAM and unclear games. */
+  opponentParticipantId: number | null;
+  opponentChampion: string | null;
+  /** Your six item slots at the end (the trinket is left out). */
+  items: number[];
+  /** What the enemy team actually threatened you with, as shares of 0-1. */
+  enemyPhysicalShare: number;
+  enemyMagicShare: number;
+  /** Total healing done by the enemy team, for judging anti-heal purchases. */
+  enemyHealing: number;
+  enemyChampions: string[];
 };
 
 const QUEUE_NAMES: Record<number, string> = {
@@ -118,6 +150,7 @@ export function toPlayerGame(
 
   const minutes = durationMinutes(match.info);
   const team = match.info.participants.filter((p) => p.teamId === me.teamId);
+  const enemies = match.info.participants.filter((p) => p.teamId !== me.teamId);
 
   const teamDamage = team.reduce(
     (sum, p) => sum + p.totalDamageDealtToChampions,
@@ -125,6 +158,25 @@ export function toPlayerGame(
   );
   const teamKills = team.reduce((sum, p) => sum + p.kills, 0);
   const cs = me.totalMinionsKilled + me.neutralMinionsKilled;
+
+  // What did the enemy team actually hurt you with? Measured from the game
+  // itself rather than guessed from champion names, so an AP Kayle or a
+  // full-lethality Senna is counted correctly.
+  const enemyPhysical = enemies.reduce(
+    (sum, p) => sum + p.physicalDamageDealtToChampions,
+    0,
+  );
+  const enemyMagic = enemies.reduce(
+    (sum, p) => sum + p.magicDamageDealtToChampions,
+    0,
+  );
+  const enemyTrue = enemies.reduce(
+    (sum, p) => sum + p.trueDamageDealtToChampions,
+    0,
+  );
+  const enemyTotalDamage = enemyPhysical + enemyMagic + enemyTrue;
+
+  const opponent = findLaneOpponent(match, me);
 
   return {
     matchId: match.metadata.matchId,
@@ -151,7 +203,38 @@ export function toPlayerGame(
     damageShare:
       teamDamage > 0 ? me.totalDamageDealtToChampions / teamDamage : 0,
     killParticipation: teamKills > 0 ? (me.kills + me.assists) / teamKills : 0,
+
+    participantId: me.participantId,
+    opponentParticipantId: opponent?.participantId ?? null,
+    opponentChampion: opponent?.championName ?? null,
+    items: [me.item0, me.item1, me.item2, me.item3, me.item4, me.item5].filter(
+      (id) => id > 0,
+    ),
+    enemyPhysicalShare:
+      enemyTotalDamage > 0 ? enemyPhysical / enemyTotalDamage : 0,
+    enemyMagicShare: enemyTotalDamage > 0 ? enemyMagic / enemyTotalDamage : 0,
+    enemyHealing: enemies.reduce((sum, p) => sum + (p.totalHeal ?? 0), 0),
+    enemyChampions: enemies.map((p) => p.championName),
   };
+}
+
+/**
+ * The enemy player in the same role as you - your actual opponent.
+ *
+ * Comparing yourself to this one player is far more useful than comparing
+ * yourself to an average, because you both played the same lane, on the same
+ * patch, against the same jungle pressure.
+ */
+export function findLaneOpponent(
+  match: RiotMatch,
+  me: RiotParticipant,
+): RiotParticipant | null {
+  if (!me.teamPosition) return null;
+  return (
+    match.info.participants.find(
+      (p) => p.teamId !== me.teamId && p.teamPosition === me.teamPosition,
+    ) ?? null
+  );
 }
 
 // --- Averages across many games ------------------------------------------

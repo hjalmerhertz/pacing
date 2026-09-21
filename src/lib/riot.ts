@@ -1,6 +1,9 @@
 import "server-only";
+import { cached } from "./cache";
+import { riotLimiter } from "./limiter";
 import { accountCluster, matchCluster, type Platform } from "./regions";
 import type { RiotMatch } from "./analysis";
+import type { RiotTimeline } from "./timeline";
 
 /**
  * A small wrapper around the Riot Games API.
@@ -23,27 +26,37 @@ export class RiotError extends Error {
 
 function apiKey(): string {
   const key = process.env.RIOT_API_KEY;
-  if (!key) {
+  if (!key || key.includes("paste-your-key")) {
     throw new RiotError(
       "No Riot API key found.",
-      "Create a file called .env.local in the project folder with the line RIOT_API_KEY=RGAPI-... and restart the dev server.",
+      "Put your key in the .env.local file in the project folder, as RIOT_API_KEY=RGAPI-...",
     );
   }
   return key;
 }
 
-/** One request to Riot, with the error cases turned into readable messages. */
-async function riotFetch<T>(
-  url: string,
-  revalidateSeconds: number,
-): Promise<T> {
+/**
+ * One request to Riot: waits for rate-limit clearance, sends it, and turns
+ * the error cases into readable messages.
+ */
+async function riotFetch<T>(url: string, attempt = 0): Promise<T> {
+  await riotLimiter.acquire();
+
   const response = await fetch(url, {
     headers: { "X-Riot-Token": apiKey() },
-    next: { revalidate: revalidateSeconds },
+    // We do our own caching on disk, so Next.js should not also try.
+    cache: "no-store",
   });
 
   if (response.ok) {
     return (await response.json()) as T;
+  }
+
+  if (response.status === 429 && attempt < 3) {
+    // Riot tells us how long to wait. Respect it and try once more.
+    const retryAfter = Number(response.headers.get("Retry-After") ?? "10");
+    await riotLimiter.backOff(Number.isFinite(retryAfter) ? retryAfter : 10);
+    return riotFetch<T>(url, attempt + 1);
   }
 
   switch (response.status) {
@@ -53,7 +66,7 @@ async function riotFetch<T>(
     case 403:
       throw new RiotError(
         "Riot refused the API key.",
-        "Development keys expire after 24 hours. Get a fresh one at developer.riotgames.com, paste it into .env.local and restart the dev server.",
+        "Development keys expire after 24 hours. Get a fresh one at developer.riotgames.com and paste it into .env.local - you do not need to restart.",
       );
     case 404:
       throw new RiotError(
@@ -62,13 +75,15 @@ async function riotFetch<T>(
       );
     case 429:
       throw new RiotError(
-        "Too many requests - Riot is rate-limiting us.",
-        "Development keys allow 100 requests every 2 minutes. Wait a minute and try again.",
+        "Riot is still rate-limiting us after several retries.",
+        "Wait a couple of minutes and try again. Games already downloaded are cached, so the retry will be much faster.",
       );
     case 503:
       throw new RiotError("Riot's service is temporarily unavailable.");
     default:
-      throw new RiotError(`Riot returned an unexpected error (${response.status}).`);
+      throw new RiotError(
+        `Riot returned an unexpected error (${response.status}).`,
+      );
   }
 }
 
@@ -91,8 +106,7 @@ export async function getAccount(
   const url = `https://${cluster}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(
     gameName,
   )}/${encodeURIComponent(tagLine)}`;
-  // Riot IDs change rarely, so it is fine to remember this for an hour.
-  return riotFetch<RiotAccount>(url, 3600);
+  return riotFetch<RiotAccount>(url);
 }
 
 /** The ids of a player's most recent matches, newest first. */
@@ -103,41 +117,50 @@ export async function getMatchIds(
   queueId?: number,
 ): Promise<string[]> {
   const cluster = matchCluster(platform);
-  // Leaving the queue out means "every game type".
   const queueFilter = queueId ? `&queue=${queueId}` : "";
-  const url = `https://${cluster}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}${queueFilter}`;
-  // Short cache: a new game should show up quickly.
-  return riotFetch<string[]>(url, 60);
+
+  // Riot only returns 100 ids per request, which is more than we ask for.
+  const url = `https://${cluster}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${Math.min(
+    count,
+    100,
+  )}${queueFilter}`;
+  return riotFetch<string[]>(url);
 }
 
+/** The scoreboard-level data for one match. Cached forever once downloaded. */
 export async function getMatch(
   matchId: string,
   platform: Platform,
 ): Promise<RiotMatch> {
   const cluster = matchCluster(platform);
-  const url = `https://${cluster}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
-  // A finished match never changes, so cache it for a long time.
-  return riotFetch<RiotMatch>(url, 60 * 60 * 24 * 30);
+  return cached(`match_${matchId}`, () =>
+    riotFetch<RiotMatch>(
+      `https://${cluster}.api.riotgames.com/lol/match/v5/matches/${matchId}`,
+    ),
+  );
 }
 
 /**
- * Fetches many matches, a few at a time.
+ * The minute-by-minute record of one match: gold, XP, CS and position for all
+ * ten players, plus every kill, item purchase and objective.
  *
- * We deliberately do NOT fire all 20 requests at once: a free development key
- * is limited to 20 requests per second, and going over that gets us blocked.
+ * This is the endpoint that makes real coaching possible - the scoreboard
+ * alone cannot tell you *when* a game went wrong.
  */
-export async function getMatches(
-  matchIds: string[],
+export async function getTimeline(
+  matchId: string,
   platform: Platform,
-  batchSize = 5,
-): Promise<RiotMatch[]> {
-  const matches: RiotMatch[] = [];
-  for (let i = 0; i < matchIds.length; i += batchSize) {
-    const batch = matchIds.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map((id) => getMatch(id, platform)),
-    );
-    matches.push(...results);
-  }
-  return matches;
+): Promise<RiotTimeline> {
+  const cluster = matchCluster(platform);
+  return cached(`timeline_${matchId}`, () =>
+    riotFetch<RiotTimeline>(
+      `https://${cluster}.api.riotgames.com/lol/match/v5/matches/${matchId}/timeline`,
+    ),
+  );
+}
+
+/** True when we already have this match on disk and it costs no request. */
+export async function isCached(key: string): Promise<boolean> {
+  const { readCache } = await import("./cache");
+  return (await readCache(key)) !== null;
 }
