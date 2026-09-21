@@ -82,7 +82,7 @@ export async function GET(request: Request) {
             type: "error",
             title: "That does not look like a Riot ID",
             detail:
-              'Riot IDs have a name and a tag separated by a hash, for example "louder than you#lty".',
+              'Riot IDs have a name and a tag separated by a hash, for example "YourName#EUW".',
           });
           return;
         }

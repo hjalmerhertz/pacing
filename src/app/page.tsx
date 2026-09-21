@@ -70,7 +70,7 @@ export default function HomePage() {
 
           <p className="mt-3 text-sm text-ink-muted">
             Your Riot ID is the name and tag from the client, for example
-            louder than you#lty. Games are cached after the first run, so
+            YourName#EUW. Games are cached after the first run, so
             coming back is fast.
           </p>
         </div>

@@ -118,11 +118,11 @@ goes in that file only, never in the Riot ID box on the page.
 ## Running it
 
 ```powershell
-cd "C:\Users\Hjalm\Documents\Claude - Projekter\lol-post-game-analysis"; npm.cmd run dev
+cd "C:\path\to\pacing"; npm.cmd run dev
 ```
 
 Then open <http://localhost:3000> and enter your Riot ID - the name and tag you
-see in the client, for example `louder than you#lty`.
+see in the client, for example `YourName#EUW`.
 
 `npm.cmd` rather than `npm` is a Windows PowerShell thing, explained under
 troubleshooting below.

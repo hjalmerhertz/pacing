@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pacing — find the beat you're missing</title>
+<meta name="description" content="Pacing reads the minute-by-minute timeline of your League of Legends games and shows where you lose the lead, what your build missed, and which games to go and watch.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+
+<!--
+  A single self-contained page, so GitHub Pages can serve it with no build
+  step and no external requests. The colour tokens and the logo are the same
+  ones the app itself uses.
+-->
+<style>
+  :root {
+    --page: #f4f4f1;
+    --surface: #fcfcfb;
+    --raised: #ffffff;
+    --border: #e3e2dd;
+    --ink: #0b0b0b;
+    --ink-soft: #52514e;
+    --ink-muted: #78766f;
+    --win: #2a78d6;
+    --loss: #eb6834;
+    --brand-from: #2a78d6;
+    --brand-to: #1baf7a;
+    --glow: rgba(42,120,214,.18);
+    --shadow: 0 4px 16px rgba(16,16,14,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0e0e0d;
+      --surface: #171716;
+      --raised: #1f1f1d;
+      --border: #2b2b28;
+      --ink: #ffffff;
+      --ink-soft: #c3c2b7;
+      --ink-muted: #8f8e85;
+      --win: #3987e5;
+      --loss: #d95926;
+      --brand-from: #3987e5;
+      --brand-to: #199e70;
+      --glow: rgba(57,135,229,.22);
+      --shadow: 0 4px 16px rgba(0,0,0,.45);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo span { font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+
+  .btn {
+    display: inline-block; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 8px 14px; border-radius: 9px; border: 1px solid var(--border); color: var(--ink-soft);
+  }
+  .btn:hover { color: var(--ink); }
+  .btn-primary {
+    border: none; color: #fff;
+    background: linear-gradient(100deg, var(--brand-from), var(--brand-to));
+  }
+
+  .hero {
+    position: relative; overflow: hidden; margin-top: 36px;
+    background: var(--raised); border: 1px solid var(--border);
+    border-radius: 18px; padding: 44px 36px; box-shadow: var(--shadow);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: -40% 40% 40% -10%;
+    background: radial-gradient(closest-side, var(--glow), transparent 70%);
+    pointer-events: none;
+  }
+  .hero > * { position: relative; }
+  h1 { font-size: clamp(32px, 5.5vw, 50px); line-height: 1.1; letter-spacing: -.03em; margin: 0; font-weight: 600; }
+  .grad {
+    background: linear-gradient(100deg, var(--brand-from), var(--brand-to));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lede { font-size: 19px; color: var(--ink-soft); max-width: 60ch; margin: 18px 0 0; }
+
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-muted); margin: 44px 0 14px; }
+  h3 { font-size: 17px; margin: 0 0 6px; font-weight: 600; }
+
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  .card p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  ol.steps li {
+    counter-increment: s; position: relative; padding: 16px 16px 16px 56px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    color: var(--ink-soft); font-size: 15px;
+  }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 18px; top: 16px;
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    background: linear-gradient(100deg, var(--brand-from), var(--brand-to));
+  }
+  ol.steps strong { color: var(--ink); font-weight: 600; }
+
+  .finding { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+  .finding .bar { height: 4px; background: var(--loss); }
+  .finding .body { padding: 20px; }
+  .finding .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--loss); margin: 0; }
+  .finding h3 { margin: 8px 0 8px; font-size: 19px; }
+  .finding p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+  .finding .note, .note { font-size: 13px; color: var(--ink-muted); margin-top: 12px; }
+
+  footer { margin-top: 52px; padding-top: 22px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-muted); }
+  a { color: var(--win); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="logo" href="./">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="var(--brand-from)"/><stop offset="100%" stop-color="var(--brand-to)"/>
+        </linearGradient></defs>
+        <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+        <path d="M4 19h5.5l3.8-8.5 4.2 12 3.4-6.5H28" fill="none" stroke="#fff"
+              stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Pacing</span>
+    </a>
+    <a class="btn" href="https://github.com/hjalmerhertz/pacing">Source on GitHub</a>
+  </header>
+
+  <section class="hero">
+    <h1>Find the beat <span class="grad">you're missing</span>.</h1>
+    <p class="lede">
+      Pacing reads the minute-by-minute <strong>timeline</strong> of your
+      League of Legends games — not the scoreboard — and tells you where the
+      lead slips away, what your build missed, and which games to go and
+      watch.
+    </p>
+    <p style="margin-top:26px">
+      <a class="btn btn-primary" href="https://github.com/hjalmerhertz/pacing">Get it on GitHub</a>
+    </p>
+  </section>
+
+  <h2>The idea</h2>
+  <div class="finding">
+    <div class="bar"></div>
+    <div class="body">
+      <p class="tag">▲ Example finding</p>
+      <h3>You are near the pit for only 27% of rift heralds</h3>
+      <p>
+        Across 45 heralds taken by either team, you were within range for 12.
+        Your team secured <strong>92%</strong> of the ones you were close to,
+        and <strong>30%</strong> of the ones you were not.
+      </p>
+      <p class="note">
+        That is the kind of thing a scoreboard cannot tell you, and a KDA
+        never will. Every finding carries an estimated cost in gold per game
+        and links to the exact matches it came from.
+      </p>
+    </div>
+  </div>
+
+  <h2>What it measures</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Where the lead slips</h3>
+      <p>Gold, CS and experience against the enemy player in your own role, every minute of every game. The five-minute window where you lose the most ground is marked on the chart.</p>
+    </div>
+    <div class="card">
+      <h3>Where you actually go</h3>
+      <p>Your routes drawn on the map from real position data, a death heatmap, and whether you were close enough to help when each objective fell.</p>
+    </div>
+    <div class="card">
+      <h3>Builds that answer the game</h3>
+      <p>Whether you bought resistances and Grievous Wounds in the games that called for them — judged on the damage the enemy actually dealt and the damage you actually took, never guessed from champion names.</p>
+    </div>
+    <div class="card">
+      <h3>One thing at a time</h3>
+      <p>Pick a single metric to work on. Pacing remembers where you started and tells you whether it moved, instead of handing you the same list of six problems every week.</p>
+    </div>
+  </div>
+
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><strong>Enter your Riot ID.</strong> Pacing pulls your recent ranked games and their full match timelines from the Riot Games API.</li>
+    <li><strong>It compares you to the player in your role</strong> — the enemy jungler, or your lane opponent — minute by minute, rather than to a league average.</li>
+    <li><strong>You get a ranked list of problems</strong>, each with a size in gold and a link to the games it came from.</li>
+  </ol>
+
+  <h2>Built to be honest</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Nothing true by definition</h3>
+      <p>"You die more in games you lose" is true for every player alive and cannot be acted on. Every finding is measured against your own opponent, or against another phase of your own game.</p>
+    </div>
+    <div class="card">
+      <h3>Corrected for survivorship</h3>
+      <p>Losses run longer than wins, so late-game averages drift for reasons that have nothing to do with how you played. The curves stop once fewer than 60% of games are still running.</p>
+    </div>
+    <div class="card">
+      <h3>Runs on your machine</h3>
+      <p>Pacing is a local app. Your API key stays in a file on your computer, downloaded games are cached locally, and nothing is uploaded, shared or sold.</p>
+    </div>
+    <div class="card">
+      <h3>Readable without colour</h3>
+      <p>Wins are blue and losses orange rather than green and red, because roughly 1 in 12 men cannot reliably separate those. Every value is written out in text too.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      Open source — <a href="https://github.com/hjalmerhertz/pacing">github.com/hjalmerhertz/pacing</a>.
+      Built with Next.js and TypeScript.
+    </p>
+    <p>
+      Pacing is not endorsed by Riot Games and does not reflect the views or
+      opinions of Riot Games or anyone officially involved in producing or
+      managing League of Legends. League of Legends and Riot Games are
+      trademarks or registered trademarks of Riot Games, Inc.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
