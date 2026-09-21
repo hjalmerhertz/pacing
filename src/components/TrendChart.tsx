@@ -108,7 +108,9 @@ export default function TrendChart({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={points}
-            margin={{ top: 8, right: 12, bottom: 4, left: -16 }}
+            // The right margin leaves room for the "avg" label on the
+            // dashed line, which sits just outside the plotting area.
+            margin={{ top: 8, right: 52, bottom: 4, left: -16 }}
           >
             <CartesianGrid stroke="var(--grid)" vertical={false} />
             <XAxis

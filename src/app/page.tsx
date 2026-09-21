@@ -1,3 +1,4 @@
+import Link from "next/link";
 import SearchForm from "@/components/SearchForm";
 
 export default function HomePage() {
@@ -14,6 +15,14 @@ export default function HomePage() {
       <div className="mt-8 rounded-xl border border-line bg-surface p-5">
         <SearchForm />
       </div>
+
+      <p className="mt-3 text-sm text-ink-soft">
+        No Riot API key yet?{" "}
+        <Link href="/analyse?demo=1" className="text-win underline">
+          See an example report
+        </Link>{" "}
+        built from made-up games.
+      </p>
 
       <section className="mt-10 text-sm text-ink-soft">
         <h2 className="font-medium text-ink">What you get</h2>

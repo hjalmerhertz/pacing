@@ -37,6 +37,9 @@ npm run dev
 Then open <http://localhost:3000> and enter your Riot ID - the name and tag you
 see in the client, for example `Hide on bush#KR1`.
 
+Without a key you can still click **See an example report** on the front page.
+It uses made-up games and never touches the network, so it works straight away.
+
 ## How it is put together
 
 | Folder / file | What it does |

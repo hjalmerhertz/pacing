@@ -10,6 +10,7 @@ import { buildReport, toPlayerGame, type PlayerGame } from "@/lib/analysis";
 import { buildInsights } from "@/lib/insights";
 import { isPlatform, platformLabel, type Platform } from "@/lib/regions";
 import { getAccount, getMatches, getMatchIds, RiotError } from "@/lib/riot";
+import { SAMPLE_NAME, sampleGames } from "@/lib/sampleData";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -27,6 +28,7 @@ export default async function AnalysePage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
+  const isDemo = first(params.demo) === "1";
   const riotId = first(params.riotId).trim();
   const platformInput = first(params.platform) || "euw1";
   const queueInput = first(params.queue) || "all";
@@ -40,7 +42,7 @@ export default async function AnalysePage({
   // A Riot ID is "Name#TAG". Everything before the last # is the name,
   // because names themselves are allowed to contain spaces.
   const hash = riotId.lastIndexOf("#");
-  if (hash <= 0 || hash === riotId.length - 1) {
+  if (!isDemo && (hash <= 0 || hash === riotId.length - 1)) {
     return (
       <Problem
         title="That does not look like a Riot ID"
@@ -51,39 +53,51 @@ export default async function AnalysePage({
       />
     );
   }
-  const gameName = riotId.slice(0, hash);
-  const tagLine = riotId.slice(hash + 1);
-  const queueId = queueInput === "all" ? undefined : Number(queueInput);
 
   let games: PlayerGame[] = [];
   let displayName = riotId;
   let failure: { title: string; detail: string } | null = null;
 
-  try {
-    const account = await getAccount(gameName, tagLine, platform);
-    displayName = `${account.gameName}#${account.tagLine}`;
+  if (isDemo) {
+    // The example report never touches the network.
+    games = sampleGames();
+    displayName = SAMPLE_NAME;
+  } else {
+    const gameName = riotId.slice(0, hash);
+    const tagLine = riotId.slice(hash + 1);
+    const queueId = queueInput === "all" ? undefined : Number(queueInput);
 
-    const matchIds = await getMatchIds(account.puuid, platform, count, queueId);
-    if (matchIds.length === 0) {
+    try {
+      const account = await getAccount(gameName, tagLine, platform);
+      displayName = `${account.gameName}#${account.tagLine}`;
+
+      const matchIds = await getMatchIds(
+        account.puuid,
+        platform,
+        count,
+        queueId,
+      );
+      if (matchIds.length === 0) {
+        failure = {
+          title: "No matches found",
+          detail:
+            "Riot has no recent games for that account in the selected game type. Try 'All game types'.",
+        };
+      } else {
+        const matches = await getMatches(matchIds, platform);
+        games = matches
+          .map((match) => toPlayerGame(match, account.puuid))
+          .filter((game): game is PlayerGame => game !== null);
+      }
+    } catch (error) {
+      // Anything we recognise becomes a readable message; anything else is a
+      // real bug and should bubble up rather than be quietly swallowed.
+      if (!(error instanceof RiotError)) throw error;
       failure = {
-        title: "No matches found",
-        detail:
-          "Riot has no recent games for that account in the selected game type. Try 'All game types'.",
+        title: error.message,
+        detail: error.hint ?? "Try again in a moment.",
       };
-    } else {
-      const matches = await getMatches(matchIds, platform);
-      games = matches
-        .map((match) => toPlayerGame(match, account.puuid))
-        .filter((game): game is PlayerGame => game !== null);
     }
-  } catch (error) {
-    // Anything we recognise becomes a readable message; anything else is a
-    // real bug and should bubble up rather than be quietly swallowed.
-    if (!(error instanceof RiotError)) throw error;
-    failure = {
-      title: error.message,
-      detail: error.hint ?? "Try again in a moment.",
-    };
   }
 
   if (failure) {
@@ -133,12 +147,27 @@ export default async function AnalysePage({
         &larr; New search
       </Link>
 
+      {isDemo && (
+        <div
+          className="mt-3 rounded-xl border-l-2 bg-surface p-4"
+          style={{ borderColor: "var(--loss)" }}
+        >
+          <p className="font-medium text-ink">This is example data</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            Made-up games, so you can see what the report looks like. Add your
+            Riot API key and search for your own Riot ID for the real thing -
+            the README explains how.
+          </p>
+        </div>
+      )}
+
       <header className="mt-3">
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
           {displayName}
         </h1>
         <p className="mt-1 text-ink-soft">
-          {report.games.length} games on {platformLabel(platform)}
+          {report.games.length} games
+          {!isDemo && ` on ${platformLabel(platform)}`}
           {report.remakesSkipped > 0 &&
             ` (${report.remakesSkipped} remake${
               report.remakesSkipped === 1 ? "" : "s"
@@ -148,7 +177,9 @@ export default async function AnalysePage({
 
       <div className="mt-6 rounded-xl border border-line bg-surface p-4">
         <SearchForm
-          riotId={displayName}
+          // On the example report the name is made up, so leave the box empty
+          // rather than inviting someone to search for a player who does not exist.
+          riotId={isDemo ? "" : displayName}
           platform={platform}
           queue={queueInput}
           count={String(count)}
