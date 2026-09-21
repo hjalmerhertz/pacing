@@ -326,29 +326,54 @@ export function buildStruggles({
     // Position data answers the question the scoreboard cannot: were you
     // actually standing near the objective when it was taken?
     if (map) {
-      for (const presence of map.objectivePresence) {
-        if (presence.total < 15) continue;
+      // One finding, not one per objective type. Splitting this up produced
+      // three near-identical cards that all claimed to be the biggest
+      // problem, which buried every other finding underneath them.
+      const absent = map.objectivePresence
+        .filter((p) => {
+          if (p.total < 15) return false;
+          const attendance = p.present / p.total;
+          const swing = p.takenWhenPresent - p.takenWhenAway;
+          // Worth saying only when showing up clearly changes the outcome
+          // *and* there is room to show up more often.
+          return swing >= 0.15 && attendance <= 0.6;
+        })
+        .sort(
+          (a, b) =>
+            b.takenWhenPresent - b.takenWhenAway -
+            (a.takenWhenPresent - a.takenWhenAway),
+        );
 
-        const attendance = presence.present / presence.total;
-        const swing = presence.takenWhenPresent - presence.takenWhenAway;
+      if (absent.length > 0) {
+        const worst = absent[0];
+        const worstName = OBJECTIVE_NAMES[worst.kind] ?? worst.kind;
+        const worstSwing = worst.takenWhenPresent - worst.takenWhenAway;
+        const worstAttendance = worst.present / worst.total;
 
-        // Only worth saying when showing up clearly changes the outcome
-        // *and* there is room to show up more often.
-        if (swing < 0.15 || attendance > 0.6) continue;
+        const lines = absent
+          .map((p) => {
+            const name = OBJECTIVE_NAMES[p.kind] ?? p.kind;
+            return `${name} - there for ${pct(
+              p.present / p.total,
+            )} of them, and your team takes ${pct(
+              p.takenWhenPresent,
+            )} when you are versus ${pct(p.takenWhenAway)} when you are not`;
+          })
+          .join("; ");
 
-        const name = OBJECTIVE_NAMES[presence.kind] ?? presence.kind;
         struggles.push({
-          id: `objective-presence-${presence.kind}`,
-          impact: swing * 2600,
-          severity: swing > 0.3 && attendance < 0.4 ? "high" : "medium",
-          title: `You are near the pit for only ${pct(attendance)} of ${name}`,
-          evidence: `Across ${presence.total} ${name} taken by either team, you were within range for ${presence.present}. Your team secured ${pct(
-            presence.takenWhenPresent,
-          )} of the ones you were close to, and only ${pct(
-            presence.takenWhenAway,
-          )} of the ones you were not.`,
-          cost: `${pct(swing)} swing in who gets the objective, decided by whether you are there`,
-          drill: `${name} spawn on a fixed timer. Start moving 45 seconds before, and clear the two camps beside the pit while you wait - you get the camps either way and you are already standing there when it opens.`,
+          id: "objective-presence",
+          impact: worstSwing * 2800,
+          severity: worstSwing > 0.3 && worstAttendance < 0.4 ? "high" : "medium",
+          title: `You are not at the pit when objectives are taken - ${worstName} worst, at ${pct(
+            worstAttendance,
+          )}`,
+          evidence: `Measured from your position on the map at the last minute before each objective fell. ${lines}.`,
+          cost: `up to a ${pct(
+            worstSwing,
+          )} swing in who gets the objective, decided by whether you are standing there`,
+          drill:
+            "Neutral objectives spawn on a fixed timer, so this is a scheduling problem rather than a mechanical one. Start moving 45 seconds before the spawn and clear the two camps beside the pit while you wait - you get the camps either way, and you are already standing there when it opens.",
         });
       }
     }

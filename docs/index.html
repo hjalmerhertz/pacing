@@ -120,6 +120,14 @@
   .finding p { margin: 0; color: var(--ink-soft); font-size: 15px; }
   .finding .note, .note { font-size: 13px; color: var(--ink-muted); margin-top: 12px; }
 
+  figure.shot { margin: 0 0 20px; }
+  figure.shot img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--border); border-radius: 14px;
+  }
+  figure.shot figcaption { font-size: 13px; color: var(--ink-muted); margin-top: 9px; }
+  .shot-pair { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
   footer { margin-top: 52px; padding-top: 22px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-muted); }
   a { color: var(--win); }
 </style>
@@ -172,6 +180,47 @@
         and links to the exact matches it came from.
       </p>
     </div>
+  </div>
+
+  <h2>What it looks like</h2>
+
+  <figure class="shot">
+    <img src="shots/overview.png" width="1400" height="1500" loading="lazy"
+         alt="The Pacing overview: a ranked list of findings, each with what it costs and what to do, above five score rings for early game, farming, fighting, itemisation and objectives.">
+    <figcaption>
+      <strong>Overview.</strong> Your problems ranked by what they cost, then
+      five scores out of 100 &mdash; one per area of the game. 50 means level
+      with the enemy player in your role, not a rank.
+    </figcaption>
+  </figure>
+
+  <figure class="shot">
+    <img src="shots/map.png" width="1400" height="1450" loading="lazy"
+         alt="The Pacing map page: jungle routes drawn on Summoner's Rift, a death heatmap, time spent per jungle quadrant, and a table of objective presence.">
+    <figcaption>
+      <strong>Map.</strong> Your routes drawn from real position data, a death
+      heatmap with a timeline slider, and whether you were close enough to
+      help when each objective fell.
+    </figcaption>
+  </figure>
+
+  <div class="shot-pair">
+    <figure class="shot">
+      <img src="shots/jungle.png" width="1400" height="1250" loading="lazy"
+           alt="The jungle page: clear speed, counter-jungling, scuttle crabs, kill participation and vision compared against the enemy jungler, plus objective control split by wins and losses.">
+      <figcaption>
+        <strong>Jungle.</strong> Measured against the enemy jungler in the
+        same games, split by wins and losses.
+      </figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="shots/matches.png" width="1400" height="1150" loading="lazy"
+           alt="The matches list: every analysed game with champion, opponent, result, date and score, filterable by result and champion.">
+      <figcaption>
+        <strong>Matches.</strong> Every game has its own page, and findings
+        link straight to the games they came from.
+      </figcaption>
+    </figure>
   </div>
 
   <h2>What it measures</h2>

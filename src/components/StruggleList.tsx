@@ -12,7 +12,7 @@ import type { Struggle } from "@/lib/coach";
 const SEVERITY = {
   high: {
     color: "var(--critical)",
-    word: "Biggest problem",
+    word: "High impact",
     Icon: IconAlert,
   },
   medium: { color: "var(--warning)", word: "Worth fixing", Icon: IconFlag },
